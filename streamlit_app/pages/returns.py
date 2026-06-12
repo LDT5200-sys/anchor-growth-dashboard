@@ -3,6 +3,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 import requests
+from datetime import datetime
 from collections import defaultdict
 
 BASE_URL = "https://open.feishu.cn/open-apis"
@@ -17,6 +18,22 @@ def num(v, default=0.0):
         return float(v) if v is not None else default
     except (ValueError, TypeError):
         return default
+
+def ts_to_date(ts):
+    """毫秒时间戳 → 日期字符串 2026-05-25"""
+    try:
+        return datetime.fromtimestamp(int(ts) / 1000).strftime('%Y-%m-%d')
+    except:
+        return str(ts) if ts else ""
+
+def get_date(r):
+    """从记录中获取日期字符串（兼容时间戳和字符串）"""
+    d = r.get("记录日期")
+    if d is None:
+        return r.get("蝉管家统计日期", "")
+    if isinstance(d, (int, float)) and d > 10000000:
+        return ts_to_date(d)
+    return str(d) if d else ""
 
 def get_token():
     r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
@@ -71,7 +88,7 @@ col1, col2 = st.columns(2)
 with col1:
     sel_anchor = st.selectbox("选择主播", ["全部"] + anchors)
 with col2:
-    dates = sorted(set(r.get("记录日期", "") for r in records if r.get("记录日期")))
+    dates = sorted(set(get_date(r) for r in records if r.get("记录日期")))
     sel_date = st.selectbox("日期", ["全部"] + dates[-15:])
 
 # 筛选
@@ -79,7 +96,7 @@ filtered = records
 if sel_anchor != "全部":
     filtered = [r for r in filtered if r.get("蝉管家主播名字") == sel_anchor]
 if sel_date != "全部":
-    filtered = [r for r in filtered if r.get("记录日期") == sel_date]
+    filtered = [r for r in filtered if get_date(r) == sel_date]
 
 # === 汇总指标 ===
 total_sales = sum(num(r.get("蝉管家主播销售额")) for r in filtered)
@@ -135,8 +152,8 @@ st.subheader("🎯 冯芊祎 退货率趋势")
 
 fqx_data = [r for r in records if "冯芊祎" in r.get("蝉管家主播名字", "")]
 if fqx_data:
-    fqx_data.sort(key=lambda r: r.get("记录日期", ""))
-    dates = [r.get("记录日期", "")[5:] for r in fqx_data]
+    fqx_data.sort(key=lambda r: get_date(r))
+    dates = [get_date(r)[5:] for r in fqx_data]
     rates = []
     for r in fqx_data:
         s = num(r.get("蝉管家主播销售额"))
