@@ -2,3 +2,6 @@
 __pycache__/
 *.pyc
 .env
+
+# Streamlit secrets
+streamlit_app/.streamlit/secrets.toml
