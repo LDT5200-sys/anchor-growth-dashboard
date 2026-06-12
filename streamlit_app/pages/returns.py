@@ -161,13 +161,10 @@ if fqx_data:
         rates.append(round(ret / s * 100, 1) if s > 0 else 0)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=dates, y=[(num(r.get("蝉管家主播销售额")))/10000 for r in fqx_data],
-                          name="销售额(万)", marker_color="#E8E8E8", yaxis="y2"))
-    fig.add_trace(go.Scatter(x=dates, y=rates, name="退货率%",
-                              mode="lines+markers", line=dict(color="#E53935", width=2.5),
-                              marker=dict(size=8)))
-    fig.update_layout(height=350, yaxis=dict(title="退货率 %"), yaxis2=dict(title="销售额(万)", overlaying="y", side="right", showgrid=False),
-                      legend=dict(orientation="h"), margin=dict(l=10, r=10, t=10, b=10))
+    fig.add_trace(go.Bar(x=dates, y=[num(r.get("蝉管家主播销售额"))/10000 for r in fqx_data], name="销售额(万)", marker_color="#90CAF9", yaxis="y2", hovertemplate="销售额: ¥%{y:.1f}万<extra></extra>"))
+    fig.add_trace(go.Scatter(x=dates, y=rates, name="退货率", mode="lines+markers+text", line=dict(color="#E53935", width=2.5), marker=dict(size=8), text=[f"{v}%" for v in rates], textposition="top center", textfont=dict(color="#E53935", size=11), hovertemplate="退货率: %{y}%<extra></extra>"))
+    fig.update_layout(height=380, yaxis=dict(title="退货率 %"), yaxis2=dict(title="销售额(万)", overlaying="y", side="right", showgrid=False),
+                      legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0), margin=dict(l=10, r=10, t=10, b=10))
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("冯芊祎暂无蝉管家退货率数据")
