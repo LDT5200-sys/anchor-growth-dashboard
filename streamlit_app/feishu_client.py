@@ -21,10 +21,8 @@ class FeishuClient:
     def _get_token(self):
         if self._token and time.time() < self._expires - 60:
             return self._token
-        app_id = st.secrets.get("FEISHU_APP_ID", os.environ.get("FEISHU_APP_ID", ""))
-        app_secret = st.secrets.get("FEISHU_APP_SECRET", os.environ.get("FEISHU_APP_SECRET", ""))
-        if not app_id or not app_secret:
-            raise RuntimeError("请配置 FEISHU_APP_ID 和 FEISHU_APP_SECRET")
+        app_id = st.secrets.get("FEISHU_APP_ID", os.environ.get("FEISHU_APP_ID", "cli_a876dccb3d7a101c"))
+        app_secret = st.secrets.get("FEISHU_APP_SECRET", os.environ.get("FEISHU_APP_SECRET", "eTURY2xNmRaSBR6nratpsdn86ENxssTA"))
         r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
                           json={"app_id": app_id, "app_secret": app_secret}, timeout=15)
         data = r.json()
