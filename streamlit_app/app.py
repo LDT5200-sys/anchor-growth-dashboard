@@ -13,7 +13,7 @@ st.set_page_config(
 overview = st.Page("pages/overview.py", title="概览", icon="📊")
 ability = st.Page("pages/ability.py", title="能力评估", icon="🎯")
 trend = st.Page("pages/trend.py", title="业绩对比", icon="📈")
-returns = st.Page("pages/returns.py", title="退货率分析", icon="📉")
+returns = st.Page("pages/returns.py", title="辅导面板", icon="🎯")
 plan = st.Page("pages/plan.py", title="成长计划", icon="📋")
 review = st.Page("pages/review.py", title="复盘记录", icon="📝")
 
