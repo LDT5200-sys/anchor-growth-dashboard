@@ -1,13 +1,13 @@
-"""概览页：指标卡片 + 能力雷达 + 最近场次"""
+"""概览页：指标卡片 + 常驻基准 + 新人PK + 能力雷达"""
 
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+import pandas as pd
 from feishu_client import get_cached_sessions, fmt_date
 
 st.title("🎯 主播成长看板")
 
-# 主播选择
 all_sessions = get_cached_sessions()
 all_anchors = sorted(set(s["anchor"] for s in all_sessions))
 default_anchor = "冯芊祎" if "冯芊祎" in all_anchors else (all_anchors[0] if all_anchors else None)
@@ -24,24 +24,22 @@ if not sessions:
     st.info(f"「{selected}」暂无场次数据")
     st.stop()
 
-# 计算指标
+# 指标卡片
 total_gmv = sum(s["gmvTotal"] for s in sessions)
 avg_gpm = round(sum(s["gpmAvg"] for s in sessions) / len(sessions))
 avg_uv = round(sum(s["uvAvg"] for s in sessions) / len(sessions), 2)
-avg_ret = round(sum(s["returnRate"] for s in sessions) / len(sessions) * 100, 1)
 
-# 指标卡片
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("累计 GMV", f"¥{total_gmv/10000:.1f}万", delta=f"{len(sessions)} 场")
 c2.metric("均场 GPM", f"{avg_gpm:,}")
 c3.metric("均场 UV", f"{avg_uv}")
-c4.metric("均退货率", f"{avg_ret}%")
+c4.metric("均退货率", f"{round(sum(s['returnRate'] for s in sessions)/len(sessions)*100,1)}%")
 latest = sessions[-1]
 c5.metric("最近 GPM", f"{latest['gpmAvg']:,}", delta=fmt_date(latest['date']))
 
 st.divider()
 
-# 两列布局
+# 两列
 left, right = st.columns([1.2, 1])
 
 with left:
@@ -52,7 +50,6 @@ with left:
     💰 GMV ¥{s['gmvTotal']:,}　📊 GPM {s['gpmAvg']:,}　👤 UV {s['uvAvg']}
     """)
 
-    # 最近5场趋势
     recent = sessions[-5:] if len(sessions) >= 5 else sessions
     fig = px.line(x=[fmt_date(r["date"]) for r in recent], y=[r["gpmAvg"] for r in recent],
                   markers=True, title=f"近{len(recent)}场 GPM 趋势")
@@ -62,33 +59,60 @@ with left:
     st.plotly_chart(fig, use_container_width=True)
 
 with right:
-    st.subheader("🏆 全体主播场次对比")
+    SENIOR = ["范晓晶", "邹楠楠", "赵颢棋", "乔莹", "苑含笑", "张新"]
+    ROOKIE = ["朱佳琪", "单楚陵", "冯芊祎"]
 
-    # 所有主播场均GPM排名
-    anchor_gpm = {}
+    anchor_stats = {}
     for s in all_sessions:
-        if s["anchor"] not in anchor_gpm:
-            anchor_gpm[s["anchor"]] = []
-        anchor_gpm[s["anchor"]].append(s["gpmAvg"])
+        n = s["anchor"]
+        if n not in anchor_stats:
+            anchor_stats[n] = {"gpm": [], "gmv": [], "uv": [], "count": 0}
+        anchor_stats[n]["gpm"].append(s["gpmAvg"])
+        anchor_stats[n]["gmv"].append(s["gmvTotal"])
+        anchor_stats[n]["uv"].append(s["uvAvg"])
+        anchor_stats[n]["count"] += 1
 
-    compare_data = []
-    for name, gpms in sorted(anchor_gpm.items()):
-        compare_data.append({
-            "主播": name,
-            "均GPM": round(sum(gpms) / len(gpms)),
-            "最高GPM": max(gpms),
-            "场次": len(gpms),
-        })
+    def build_row(names):
+        rows = []
+        for n in names:
+            if n in anchor_stats:
+                d = anchor_stats[n]
+                rows.append({
+                    "主播": n,
+                    "均GPM": round(sum(d["gpm"]) / len(d["gpm"])),
+                    "总GMV": f"¥{sum(d['gmv'])/10000:.1f}万",
+                    "均UV": round(sum(d["uv"]) / len(d["uv"]), 1),
+                    "场次": d["count"],
+                })
+        return rows
 
-    compare_data.sort(key=lambda x: x["均GPM"], reverse=True)
+    st.subheader("🏆 常驻主播基准")
+    sr = build_row(SENIOR)
+    sr.sort(key=lambda x: x["均GPM"], reverse=True)
+    st.dataframe(sr, use_container_width=True, hide_index=True,
+                 column_config={"均GPM": st.column_config.NumberColumn(format="%d")})
 
-    st.dataframe(compare_data, use_container_width=True, hide_index=True,
-                 column_config={
-                     "均GPM": st.column_config.NumberColumn(format="%d"),
-                     "最高GPM": st.column_config.NumberColumn(format="%d"),
-                 })
+    st.subheader("🔥 新主播 PK")
+    rr = build_row(ROOKIE)
+    if rr:
+        rr.sort(key=lambda x: x["均GPM"], reverse=True)
+        st.dataframe(rr, use_container_width=True, hide_index=True,
+                     column_config={"均GPM": st.column_config.NumberColumn(format="%d")})
+        pk_gpms = []
+        for name in ROOKIE:
+            if name in anchor_stats:
+                for g in anchor_stats[name]["gpm"]:
+                    pk_gpms.append({"主播": name, "GPM": g})
+        if pk_gpms:
+            fig = px.box(pd.DataFrame(pk_gpms), x="主播", y="GPM", color="主播",
+                         color_discrete_sequence=["#E53935", "#FB8C00", "#2E7D32"])
+            fig.update_layout(height=250, margin=dict(l=10, r=10, t=10, b=10),
+                              showlegend=False, plot_bgcolor="white")
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("暂无新主播数据（单楚陵下周入职，暂无数据）")
 
-# 能力雷达图
+# 能力雷达
 st.divider()
 st.subheader("🕸️ 能力雷达")
 
@@ -103,12 +127,11 @@ if history:
     history.sort(key=lambda h: h["date"])
     latest_scores = history[-1]["scores"]
     vals = [latest_scores.get(label, 0) for label in ability_labels]
-
     fig = go.Figure(go.Scatterpolar(r=vals, theta=ability_labels, fill='toself',
-                                     fillcolor='rgba(46,125,50,0.15)',
-                                     line=dict(color='#2E7D32', width=2)))
+                                    fillcolor='rgba(46,125,50,0.15)',
+                                    line=dict(color='#2E7D32', width=2)))
     fig.update_layout(polar=dict(radialaxis=dict(range=[0, 5])), height=320,
                       margin=dict(l=40, r=40, t=20, b=20))
     st.plotly_chart(fig, use_container_width=True)
 else:
-    st.info("💡 前往「能力评估」页面对主播进行首次评估，即可看到能力雷达图")
+    st.info("💡 前往「能力评估」页面对主播进行首次评估")
