@@ -23,11 +23,14 @@ class FeishuClient:
             return self._token
         app_id = st.secrets.get("FEISHU_APP_ID", os.environ.get("FEISHU_APP_ID", "cli_a876dccb3d7a101c"))
         app_secret = st.secrets.get("FEISHU_APP_SECRET", os.environ.get("FEISHU_APP_SECRET", "eTURY2xNmRaSBR6nratpsdn86ENxssTA"))
-        r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
-                          json={"app_id": app_id, "app_secret": app_secret}, timeout=15)
-        data = r.json()
-        if data.get("code") != 0:
-            raise RuntimeError(f"飞书 Token 失败: {data}")
+        try:
+            r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
+                              json={"app_id": app_id, "app_secret": app_secret}, timeout=15)
+            data = r.json()
+            if data.get("code") != 0:
+                raise RuntimeError(f"飞书 Token 失败: {data}")
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"网络错误（连不上飞书API）: {e}")
         self._token = data["tenant_access_token"]
         self._expires = time.time() + data.get("expire", 7200)
         return self._token
