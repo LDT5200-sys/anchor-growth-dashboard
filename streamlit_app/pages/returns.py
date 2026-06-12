@@ -12,17 +12,15 @@ BASE_TOKEN = "Jwu7bRyHvagQ4Hsv8ExcPiOOnnd"
 
 def get_app_creds():
     import os
-    app_id = ""
-    app_secret = ""
     try:
-        app_id = st.secrets.get("FEISHU_APP_ID", "")
-        app_secret = st.secrets.get("FEISHU_APP_SECRET", "")
+        app_id = st.secrets["FEISHU_APP_ID"]
+        app_secret = st.secrets["FEISHU_APP_SECRET"]
+        return app_id, app_secret
     except:
-        pass
-    if not app_id:
-        app_id = os.environ.get("FEISHU_APP_ID", "")
-        app_secret = os.environ.get("FEISHU_APP_SECRET", "")
-    return app_id, app_secret
+        return (
+            os.environ.get("FEISHU_APP_ID", "cli_a876dccb3d7a101c"),
+            os.environ.get("FEISHU_APP_SECRET", "eTURY2xNmRaSBR6nratpsdn86ENxssTA"),
+        )
 
 def get_token():
     app_id, app_secret = get_app_creds()
