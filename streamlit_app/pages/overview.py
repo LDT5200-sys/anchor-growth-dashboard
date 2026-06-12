@@ -98,17 +98,25 @@ with right:
         rr.sort(key=lambda x: x["均GPM"], reverse=True)
         st.dataframe(rr, use_container_width=True, hide_index=True,
                      column_config={"均GPM": st.column_config.NumberColumn(format="%d")})
-        pk_gpms = []
+        pk_data = []
         for name in ROOKIE:
             if name in anchor_stats:
-                for g in anchor_stats[name]["gpm"]:
-                    pk_gpms.append({"主播": name, "GPM": g})
-        if pk_gpms:
-            fig = px.box(pd.DataFrame(pk_gpms), x="主播", y="GPM", color="主播",
-                         color_discrete_sequence=["#E53935", "#FB8C00", "#2E7D32"])
-            fig.update_traces(hoverinfo="none")  # 隐藏箱线统计标签
-            fig.update_layout(height=250, margin=dict(l=10, r=10, t=10, b=10),
-                              showlegend=False, plot_bgcolor="white")
+                d = anchor_stats[name]
+                avg_gpm = round(sum(d["gpm"]) / len(d["gpm"]))
+                pk_data.append({"主播": name, "均GPM": avg_gpm, "场次": d["count"],
+                                "最低": min(d["gpm"]), "最高": max(d["gpm"])})
+        if pk_data:
+            # 柱状图（均值）+ 范围线（最低-最高）
+            fig = go.Figure()
+            colors_list = ["#E53935", "#FB8C00", "#2E7D32"]
+            for i, item in enumerate(pk_data):
+                fig.add_trace(go.Bar(x=[item["主播"]], y=[item["均GPM"]],
+                                     name=item["主播"],
+                                     marker_color=colors_list[i % 3],
+                                     text=f"{item['均GPM']:,}", textposition="outside",
+                                     hovertemplate=f"均GPM: {item['均GPM']:,}<br>范围: {item['最低']:,}~{item['最高']:,}<extra></extra>"))
+            fig.update_layout(height=260, margin=dict(l=10, r=10, t=10, b=10),
+                              showlegend=False, plot_bgcolor="white", yaxis_title="均GPM")
             st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("暂无新主播数据（单楚陵下周入职，暂无数据）")
