@@ -122,7 +122,7 @@ for name, d in anchor_returns.items():
     if name != "冯芊祎" and d["sales"] > 50000:
         rate = round(d["returns"]/d["sales"]*100, 1) if d["sales"] > 0 else 0
         all_rates.append(rate)
-avg_rate = sum(all_rates)/len(all_rates) if all_rates else 0
+avg_rate = round(sum(all_rates)/len(all_rates), 1) if all_rates else 0
 
 # ============================================
 st.title("🎯 冯芊祎 · 专属辅导面板")
