@@ -1,0 +1,301 @@
+{
+  "anchor": {
+    "name": "冯芊祎",
+    "startDate": "2026-05-25",
+    "level": "新人期",
+    "mainProduct": "秘纤"
+  },
+  "abilityLabels": [
+    "产品知识",
+    "话术框架",
+    "控场节奏",
+    "塑品能力",
+    "逼单转化",
+    "数据感知",
+    "情绪管理",
+    "评论互动",
+    "镜头表现",
+    "学习成长"
+  ],
+  "sessions": [
+    {
+      "date": "2026-05-25",
+      "shift": "C",
+      "operator": "邢世坦",
+      "hours": 4,
+      "gmvTotal": 68249,
+      "gpmAvg": 6036,
+      "uvAvg": 8.98,
+      "returnRate": 0.324
+    },
+    {
+      "date": "2026-05-28",
+      "shift": "C",
+      "operator": "邓安祺",
+      "hours": 4,
+      "gmvTotal": 85900,
+      "gpmAvg": 5924,
+      "uvAvg": 9.24,
+      "returnRate": 0.324
+    },
+    {
+      "date": "2026-06-08",
+      "shift": "A",
+      "operator": "邢世坦",
+      "hours": 3.9,
+      "gmvTotal": 36870,
+      "gpmAvg": 3822,
+      "uvAvg": 4.86,
+      "returnRate": 0.324
+    },
+    {
+      "date": "2026-06-09",
+      "shift": "B",
+      "operator": "张佳林",
+      "hours": 4.0,
+      "gmvTotal": 57001,
+      "gpmAvg": 5591,
+      "uvAvg": 7.84,
+      "returnRate": 0.324
+    },
+    {
+      "date": "2026-06-12",
+      "shift": "A",
+      "operator": "贾明芳",
+      "hours": 4,
+      "gmvTotal": 59385,
+      "gpmAvg": 4877,
+      "uvAvg": 6.27,
+      "returnRate": 0.324
+    }
+  ],
+  "abilities": [
+    {
+      "date": "2026-06-08",
+      "scores": {
+        "产品知识": 3,
+        "话术框架": 2,
+        "控场节奏": 2,
+        "塑品能力": 2,
+        "逼单转化": 3,
+        "数据感知": 1,
+        "情绪管理": 3,
+        "评论互动": 2,
+        "镜头表现": 3,
+        "学习成长": 4
+      },
+      "comment": "首次评估，产品基础不错但数据意识薄弱"
+    }
+  ],
+  "weeklyPlans": [
+    {
+      "week": "2026-W24",
+      "focus": [
+        "产品知识",
+        "话术框架"
+      ],
+      "materials": [
+        "三代秘纤速干圆领短袖T恤话术.docx",
+        "话术逻辑万能公式.mp4"
+      ],
+      "target": "GPM 稳定在 5000+，话术结构完整不散架",
+      "status": "进行中"
+    }
+  ],
+  "reviews": [
+    {
+      "date": "2026-06-09",
+      "sessionDate": "2026-06-09",
+      "highlight": "GPM 保持在 4800-6500，节奏控制比上场进步明显",
+      "toImprove": "开场第1小时起量较慢，B班的冷启动需要加强",
+      "action": "练习「开场3分钟快速破冰」+ 前5分钟成交闭环",
+      "score": 6
+    },
+    {
+      "date": "2026-06-08",
+      "sessionDate": "2026-06-08",
+      "highlight": "首次早班(A班)体验，虽然GMV仅3.7万但完成了全流程",
+      "toImprove": "GPM 仅 3822，远低于中班水平，早班承接能力弱",
+      "action": "针对性练习早班开场话术和冷启动策略",
+      "score": 4
+    },
+    {
+      "date": "2026-05-28",
+      "sessionDate": "2026-05-28",
+      "highlight": "中班表现优秀，8.6万GMV，GPM 5924，UV 9.24 目前最高",
+      "toImprove": "中间有短暂断成交，需要强化返场钩子",
+      "action": "练习断成交后的快速恢复话术",
+      "score": 6
+    }
+  ],
+  "materials": [
+    {
+      "id": 1,
+      "category": "产品知识",
+      "subCategory": "夏季T恤",
+      "name": "三代秘纤速干圆领短袖T恤话术",
+      "type": "docx"
+    },
+    {
+      "id": 2,
+      "category": "产品知识",
+      "subCategory": "夏季T恤",
+      "name": "秘纤产品完整话术",
+      "type": "docx"
+    },
+    {
+      "id": 3,
+      "category": "话术框架",
+      "subCategory": "PPT课程",
+      "name": "话术逻辑万能公式",
+      "type": "mp4"
+    },
+    {
+      "id": 4,
+      "category": "逼单转化",
+      "subCategory": "PPT课程",
+      "name": "如何精准逼单，话术不单一",
+      "type": "mp4"
+    },
+    {
+      "id": 5,
+      "category": "控场节奏",
+      "subCategory": "PPT课程",
+      "name": "如何把握直播节奏",
+      "type": "mp4"
+    },
+    {
+      "id": 6,
+      "category": "情绪管理",
+      "subCategory": "PPT课程",
+      "name": "主播如何调整心态",
+      "type": "mp4"
+    },
+    {
+      "id": 7,
+      "category": "塑品能力",
+      "subCategory": "PPT课程",
+      "name": "痛点场景化",
+      "type": "mp4"
+    },
+    {
+      "id": 8,
+      "category": "评论互动",
+      "subCategory": "PPT课程",
+      "name": "评论区尺码多怎么办",
+      "type": "mp4"
+    },
+    {
+      "id": 9,
+      "category": "逼单转化",
+      "subCategory": "PPT课程",
+      "name": "问的人多但是不下单怎么办",
+      "type": "mp4"
+    },
+    {
+      "id": 10,
+      "category": "评论互动",
+      "subCategory": "PPT课程",
+      "name": "评论区遇到差评恶评怎么办",
+      "type": "mp4"
+    },
+    {
+      "id": 11,
+      "category": "产品知识",
+      "subCategory": "夏季裤装",
+      "name": "隐之冰岚轻量锥形牛仔裤话术",
+      "type": "docx"
+    },
+    {
+      "id": 12,
+      "category": "产品知识",
+      "subCategory": "夏季裤装",
+      "name": "三代隐冰cordura战术通勤牛仔裤话术",
+      "type": "docx"
+    },
+    {
+      "id": 13,
+      "category": "产品知识",
+      "subCategory": "夏季外套",
+      "name": "五代B4级轻量便携风衣话术",
+      "type": "docx"
+    },
+    {
+      "id": 14,
+      "category": "产品知识",
+      "subCategory": "夏季T恤",
+      "name": "秘之风羽PRO美丽诺羊毛短袖T恤话术",
+      "type": "docx"
+    },
+    {
+      "id": 15,
+      "category": "话术框架",
+      "subCategory": "早A承接",
+      "name": "主播经验手册-早A承接篇",
+      "type": "docx"
+    },
+    {
+      "id": 16,
+      "category": "控场节奏",
+      "subCategory": "控场",
+      "name": "主播经验手册-控场篇",
+      "type": "docx"
+    },
+    {
+      "id": 17,
+      "category": "情绪管理",
+      "subCategory": "情绪管理",
+      "name": "主播经验手册-情绪管理篇",
+      "type": "docx"
+    },
+    {
+      "id": 18,
+      "category": "塑品能力",
+      "subCategory": "塑品",
+      "name": "主播经验手册-塑品篇",
+      "type": "docx"
+    },
+    {
+      "id": 19,
+      "category": "逼单转化",
+      "subCategory": "逼单",
+      "name": "主播经验手册-逼单篇",
+      "type": "docx"
+    },
+    {
+      "id": 20,
+      "category": "数据感知",
+      "subCategory": "数据",
+      "name": "主播经验手册-数据篇",
+      "type": "docx"
+    },
+    {
+      "id": 21,
+      "category": "学习成长",
+      "subCategory": "避坑",
+      "name": "主播经验手册-避坑篇",
+      "type": "docx"
+    },
+    {
+      "id": 22,
+      "category": "学习成长",
+      "subCategory": "外部学习",
+      "name": "主播经验手册-外部学习篇",
+      "type": "docx"
+    },
+    {
+      "id": 23,
+      "category": "产品知识",
+      "subCategory": "物流",
+      "name": "稀缺营销与物流承诺行为规范",
+      "type": "docx"
+    },
+    {
+      "id": 24,
+      "category": "产品知识",
+      "subCategory": "通用",
+      "name": "主播培训项目纯干货版第一讲",
+      "type": "pptx"
+    }
+  ]
+}

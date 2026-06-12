@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>主播成长看板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0F1116; --bg-2:#14171F; --surface:#1B1F2A; --surface-2:#222736;
+  --line:#2B3242; --line-soft:#232938;
+  --text:#EAECF3; --text-2:#9298AA; --text-3:#5C6377;
+  --jade:#46CC8D; --jade-dim:rgba(70,204,141,.14); --jade-line:rgba(70,204,141,.45);
+  --amber:#E8B06A; --coral:#E47A63; --cyan:#5BA8E0; --violet:#8E8BE0;
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px -12px rgba(0,0,0,.6);
+  --r:14px; --r-sm:10px;
+  --display:'Sora',-apple-system,BlinkMacSystemFont,sans-serif;
+  --sans:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC","Segoe UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--sans); background:var(--bg); color:var(--text);
+  font-size:14px; line-height:1.55; min-height:100vh;
+  background-image:radial-gradient(900px 500px at 88% -8%, rgba(70,204,141,.07), transparent 60%);
+}
+.wrap{max-width:1140px; margin:0 auto; padding:20px 22px 56px}
+.tabular{font-variant-numeric:tabular-nums}
+.num{font-family:var(--display); font-variant-numeric:tabular-nums; letter-spacing:-.01em}
+
+/* ---------- Top bar ---------- */
+.topbar{display:flex; align-items:center; gap:16px; padding:14px 4px 18px; flex-wrap:wrap}
+.avatar{
+  width:54px; height:54px; border-radius:14px; flex:none;
+  display:grid; place-items:center; font-family:var(--display); font-weight:700; font-size:24px;
+  color:#0c1a13; background:linear-gradient(145deg,#5fe0a0,#33b277);
+  box-shadow:0 0 0 1px rgba(70,204,141,.4), 0 6px 18px -6px rgba(70,204,141,.5);
+}
+.id-block{display:flex; flex-direction:column; gap:3px; min-width:0}
+.id-line{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.id-name{font-family:var(--display); font-weight:600; font-size:22px; letter-spacing:.01em}
+.level-chip{
+  font-size:11.5px; font-weight:600; padding:3px 9px; border-radius:999px;
+  color:var(--jade); background:var(--jade-dim); border:1px solid var(--jade-line); white-space:nowrap;
+}
+.id-meta{color:var(--text-2); font-size:12.5px; display:flex; gap:8px; flex-wrap:wrap}
+.id-meta b{color:var(--text); font-weight:500}
+.dot-sep{color:var(--text-3)}
+.actions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap}
+
+/* ---------- Buttons ---------- */
+.btn{
+  font-family:var(--sans); font-size:12.5px; font-weight:500; cursor:pointer;
+  padding:8px 13px; border-radius:9px; border:1px solid var(--line);
+  background:var(--surface); color:var(--text-2); transition:.15s; white-space:nowrap;
+}
+.btn:hover{border-color:#3a4356; color:var(--text); background:var(--surface-2)}
+.btn:focus-visible{outline:2px solid var(--jade); outline-offset:2px}
+.btn-primary{background:var(--jade); border-color:var(--jade); color:#0c1a13; font-weight:600}
+.btn-primary:hover{background:#5fe0a0; border-color:#5fe0a0; color:#0c1a13}
+.btn-sm{padding:5px 10px; font-size:11.5px}
+.btn-ghost{background:transparent}
+
+/* ---------- Tabs ---------- */
+.tabs{display:flex; gap:4px; padding:5px; background:var(--bg-2);
+  border:1px solid var(--line-soft); border-radius:12px; overflow-x:auto; -webkit-overflow-scrolling:touch}
+.tab-btn{
+  font-family:var(--sans); font-size:13.5px; font-weight:500; cursor:pointer; white-space:nowrap;
+  padding:8px 16px; border-radius:8px; border:0; background:transparent; color:var(--text-2); transition:.15s;
+}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{background:var(--surface-2); color:var(--text); box-shadow:var(--shadow)}
+.tab-btn:focus-visible{outline:2px solid var(--jade); outline-offset:-2px}
+
+.panel{display:none; padding-top:22px; animation:fade .25s ease}
+.panel.active{display:block}
+@keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
+
+/* ---------- Cards / surfaces ---------- */
+.card{background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--r); box-shadow:var(--shadow)}
+.card-pad{padding:18px 20px}
+.card-head{display:flex; align-items:center; gap:10px; margin-bottom:14px}
+.card-head h3{font-size:13.5px; font-weight:600; letter-spacing:.02em}
+.eyebrow{font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--text-3)}
+
+/* ---------- Metric grid ---------- */
+.metric-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px}
+.metric{position:relative; overflow:hidden}
+.metric .label{font-size:12px; color:var(--text-2); display:flex; align-items:center; justify-content:space-between; gap:8px}
+.metric .value{font-size:30px; font-weight:600; margin:8px 0 2px; line-height:1}
+.metric .value small{font-size:15px; color:var(--text-2); font-weight:500; margin-left:2px}
+.metric .sub{font-size:11.5px; color:var(--text-3); display:flex; align-items:center; gap:5px}
+.trend-up{color:var(--jade)} .trend-down{color:var(--coral)} .trend-flat{color:var(--text-3)}
+.spark{display:block}
+.metric .accent{position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px}
+
+/* ---------- Overview layout ---------- */
+.ov-grid{display:grid; grid-template-columns:1.35fr 1fr; gap:14px}
+.summary-head{font-family:var(--display); font-size:15px; font-weight:600; margin-bottom:4px}
+.summary-meta{font-size:12px; color:var(--text-2); margin-bottom:16px; display:flex; gap:7px; flex-wrap:wrap}
+.note{display:flex; gap:11px; padding:12px 13px; border-radius:var(--r-sm); margin-bottom:10px;
+  background:var(--bg-2); border:1px solid var(--line-soft); align-items:flex-start}
+.note .ico{flex:none; width:22px; height:22px; border-radius:7px; display:grid; place-items:center; font-size:12px; margin-top:1px}
+.note .ttl{font-size:11px; font-weight:600; letter-spacing:.04em; margin-bottom:2px}
+.note p{font-size:13px; color:var(--text); line-height:1.5}
+.note.hl .ico{background:rgba(232,176,106,.16); color:var(--amber)} .note.hl .ttl{color:var(--amber)}
+.note.im .ico{background:rgba(228,122,99,.16); color:var(--coral)} .note.im .ttl{color:var(--coral)}
+.note.ac .ico{background:var(--jade-dim); color:var(--jade)} .note.ac .ttl{color:var(--jade)}
+.chart-box{position:relative; height:300px}
+.chart-box.sm{height:260px}
+
+/* ---------- Tables ---------- */
+.tbl-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch}
+table{width:100%; border-collapse:collapse; font-size:13px}
+th{text-align:left; font-weight:600; color:var(--text-3); font-size:11px; letter-spacing:.06em; text-transform:uppercase;
+  padding:9px 12px; border-bottom:1px solid var(--line); white-space:nowrap}
+td{padding:11px 12px; border-bottom:1px solid var(--line-soft); white-space:nowrap; color:var(--text)}
+tr:last-child td{border-bottom:0}
+tbody tr{transition:background .12s}
+tbody tr:hover{background:rgba(255,255,255,.018)}
+td.t-num,th.t-num{text-align:right; font-family:var(--display); font-variant-numeric:tabular-nums}
+.pill{font-size:11px; font-weight:600; padding:2px 8px; border-radius:6px; display:inline-block}
+.pill-c{background:rgba(91,168,224,.15); color:var(--cyan)}
+.pill-b{background:rgba(142,139,224,.16); color:var(--violet)}
+.delta-up{color:var(--jade); font-weight:600} .delta-down{color:var(--coral); font-weight:600} .delta-flat{color:var(--text-3)}
+.tag{font-size:11px; padding:2px 8px; border-radius:6px; background:var(--bg-2); border:1px solid var(--line-soft); color:var(--text-2)}
+.tag.s1{color:var(--coral)} .tag.s3{color:var(--amber)} .tag.s4{color:var(--jade)}
+
+/* ---------- Forms ---------- */
+.row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end}
+.field{display:flex; flex-direction:column; gap:6px}
+.field label{font-size:11.5px; color:var(--text-2); font-weight:500}
+select,input[type=text],input[type=date],input[type=number],textarea{
+  font-family:var(--sans); font-size:13px; color:var(--text);
+  background:var(--bg-2); border:1px solid var(--line); border-radius:9px; padding:9px 11px; transition:.15s;
+}
+select{cursor:pointer; min-width:150px}
+textarea{resize:vertical; min-height:62px; width:100%; line-height:1.5}
+input:focus,select:focus,textarea:focus{outline:0; border-color:var(--jade-line); box-shadow:0 0 0 3px var(--jade-dim)}
+.divider{height:1px; background:var(--line-soft); margin:18px 0}
+.toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:16px}
+.toolbar .grow{flex:1}
+
+/* score number inputs grid */
+.score-grid{display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin:4px 0 14px}
+.score-cell{display:flex; flex-direction:column; gap:5px}
+.score-cell label{font-size:11.5px; color:var(--text-2)}
+.score-cell input{padding:7px 9px; text-align:center; font-family:var(--display)}
+
+/* checkboxes */
+.chk-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:8px; margin:4px 0}
+.chk{display:flex; align-items:center; gap:8px; padding:8px 11px; border-radius:9px;
+  background:var(--bg-2); border:1px solid var(--line-soft); cursor:pointer; font-size:12.5px; transition:.15s; user-select:none}
+.chk:hover{border-color:var(--line)}
+.chk input{accent-color:var(--jade); width:15px; height:15px; cursor:pointer}
+.chk.on{border-color:var(--jade-line); background:var(--jade-dim); color:var(--text)}
+
+/* materials list */
+.mat-list{display:flex; flex-direction:column; gap:7px}
+.mat{display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:9px;
+  background:var(--bg-2); border:1px solid var(--line-soft); cursor:pointer; transition:.15s}
+.mat:hover{border-color:var(--line)}
+.mat.on{border-color:var(--jade-line); background:var(--jade-dim)}
+.mat .ft{font:600 9.5px/1 var(--display); padding:3px 5px; border-radius:5px; letter-spacing:.04em}
+.ft.docx{background:rgba(91,168,224,.18); color:var(--cyan)}
+.ft.mp4{background:rgba(232,176,106,.18); color:var(--amber)}
+.mat .mname{font-size:13px; flex:1}
+.mat .mcat{font-size:11px; color:var(--text-3)}
+.mat input{accent-color:var(--jade); width:15px; height:15px}
+
+/* review history */
+.rv-list{display:flex; flex-direction:column; gap:12px}
+.rv{padding:15px 17px; border-radius:var(--r); background:var(--surface); border:1px solid var(--line-soft)}
+.rv-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; flex-wrap:wrap}
+.rv-date{font-family:var(--display); font-weight:600; font-size:14px}
+.rv-sess{font-size:11.5px; color:var(--text-2)}
+.dots{display:inline-flex; gap:3px; align-items:center}
+.dots i{width:8px; height:8px; border-radius:50%; background:var(--line); display:inline-block}
+.dots i.on{background:var(--jade)}
+.dots .sc{font-family:var(--display); font-size:12px; color:var(--text-2); margin-left:6px}
+
+.status-chip{font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px}
+.st-doing{color:var(--amber); background:rgba(232,176,106,.14)}
+.st-done{color:var(--jade); background:var(--jade-dim)}
+.st-plan{color:var(--cyan); background:rgba(91,168,224,.14)}
+
+.empty{color:var(--text-3); font-size:13px; text-align:center; padding:26px}
+.toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--surface-2); color:var(--text); border:1px solid var(--jade-line); border-radius:10px;
+  padding:11px 18px; font-size:13px; box-shadow:0 12px 30px -8px rgba(0,0,0,.7); opacity:0; pointer-events:none; transition:.25s; z-index:50}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+.chart-fallback{display:grid; place-items:center; height:100%; color:var(--text-3); font-size:13px; text-align:center; padding:20px}
+
+@media (max-width:820px){
+  .metric-grid{grid-template-columns:repeat(2,1fr)}
+  .ov-grid{grid-template-columns:1fr}
+  .score-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:480px){
+  .wrap{padding:14px 13px 48px}
+  .metric .value{font-size:26px}
+  .id-name{font-size:19px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="avatar" id="avatar">主</div>
+    <div class="id-block">
+      <div class="id-line">
+        <span class="id-name" id="anchorName">主播成长看板</span>
+        <span class="level-chip" id="levelChip">—</span>
+      </div>
+      <div class="id-meta" id="anchorMeta"></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="importBtn">导入数据</button>
+      <button class="btn" id="exportBtn">导出数据</button>
+      <button class="btn btn-ghost" id="resetBtn">重置</button>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="overview" role="tab">概览</button>
+    <button class="tab-btn" data-tab="ability" role="tab">能力评估</button>
+    <button class="tab-btn" data-tab="trend" role="tab">业绩趋势</button>
+    <button class="tab-btn" data-tab="plan" role="tab">成长计划</button>
+    <button class="tab-btn" data-tab="review" role="tab">复盘记录</button>
+  </div>
+
+  <!-- ============ OVERVIEW ============ -->
+  <section class="panel active" id="overview">
+    <div class="metric-grid" id="metricGrid"></div>
+    <div class="ov-grid">
+      <div class="card card-pad">
+        <div class="card-head"><span class="eyebrow">最近一场</span></div>
+        <div id="latestSummary"></div>
+      </div>
+      <div class="card card-pad">
+        <div class="card-head"><span class="eyebrow">最新能力雷达</span></div>
+        <div class="chart-box sm"><canvas id="ovRadar"></canvas><div id="ovRadarFb"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABILITY ============ -->
+  <section class="panel" id="ability">
+    <div class="toolbar">
+      <div class="field">
+        <label>评估日期</label>
+        <select id="abilitySelect"></select>
+      </div>
+      <div class="grow"></div>
+      <button class="btn btn-primary btn-sm" id="newEvalToggle">＋ 新增评估</button>
+    </div>
+
+    <div class="ov-grid">
+      <div class="card card-pad">
+        <div class="card-head"><span class="eyebrow">本次 vs 上次</span></div>
+        <div class="chart-box"><canvas id="abRadar"></canvas><div id="abRadarFb"></div></div>
+        <p id="evalComment" style="font-size:12.5px;color:var(--text-2);margin-top:12px;line-height:1.5"></p>
+      </div>
+      <div class="card card-pad">
+        <div class="card-head"><span class="eyebrow">十项能力评分</span></div>
+        <div class="tbl-scroll">
+          <table>
+            <thead><tr><th>能力项</th><th class="t-num">本次</th><th class="t-num">上次</th><th class="t-num">变化</th><th>水平</th></tr></thead>
+            <tbody id="abilityRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-pad" id="newEvalForm" style="display:none;margin-top:14px">
+      <div class="card-head"><span class="eyebrow">新增能力评估</span></div>
+      <div class="row" style="margin-bottom:8px">
+        <div class="field"><label>评估日期</label><input type="date" id="evalDate"></div>
+      </div>
+      <div class="score-grid" id="evalScoreInputs"></div>
+      <div class="field" style="margin-bottom:14px"><label>整体评语</label><textarea id="evalCommentInput" placeholder="例如：话术框架进步明显，塑品能力仍需打磨…"></textarea></div>
+      <button class="btn btn-primary" id="saveEval">保存评估</button>
+    </div>
+  </section>
+
+  <!-- ============ TREND ============ -->
+  <section class="panel" id="trend">
+    <div class="toolbar" id="metricSwitch"></div>
+    <div class="card card-pad" style="margin-bottom:14px">
+      <div class="card-head"><span class="eyebrow" id="trendTitle">关键指标趋势</span></div>
+      <div class="chart-box"><canvas id="trendChart"></canvas><div id="trendFb"></div></div>
+    </div>
+    <div class="card card-pad">
+      <div class="card-head"><span class="eyebrow">逐场对比</span></div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>日期</th><th>班次</th><th class="t-num">时长</th><th class="t-num">GMV</th><th class="t-num">GPM</th><th class="t-num">UV价值</th><th class="t-num">退货率</th><th>运营</th></tr></thead>
+          <tbody id="sessionRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PLAN ============ -->
+  <section class="panel" id="plan">
+    <div class="toolbar">
+      <div class="field"><label>选择周</label><select id="weekSelect"></select></div>
+      <div class="grow"></div>
+      <button class="btn btn-sm" id="newPlanBtn">＋ 新建计划</button>
+    </div>
+    <div class="card card-pad">
+      <div class="row" style="margin-bottom:16px">
+        <div class="field"><label>周次</label><input type="text" id="planWeek" placeholder="2026-W25"></div>
+        <div class="field"><label>完成情况</label>
+          <select id="planStatus"><option>未开始</option><option>进行中</option><option>已完成</option></select>
+        </div>
+      </div>
+
+      <label style="font-size:11.5px;color:var(--text-2);font-weight:500">本周重点能力</label>
+      <div class="chk-grid" id="focusChecks" style="margin-bottom:16px"></div>
+
+      <label style="font-size:11.5px;color:var(--text-2);font-weight:500">关联学习资料</label>
+      <div class="mat-list" id="planMaterials" style="margin:6px 0 16px"></div>
+
+      <div class="field" style="margin-bottom:16px"><label>本周目标</label><textarea id="planTarget" placeholder="例如：GPM 稳定 5000+，话术结构完整不散架"></textarea></div>
+
+      <button class="btn btn-primary" id="savePlan">保存计划</button>
+    </div>
+  </section>
+
+  <!-- ============ REVIEW ============ -->
+  <section class="panel" id="review">
+    <div class="toolbar">
+      <span class="eyebrow">场次复盘</span>
+      <div class="grow"></div>
+      <button class="btn btn-primary btn-sm" id="newReviewToggle">＋ 新建复盘</button>
+    </div>
+
+    <div class="card card-pad" id="newReviewForm" style="display:none;margin-bottom:16px">
+      <div class="card-head"><span class="eyebrow">新建复盘</span></div>
+      <div class="row" style="margin-bottom:14px">
+        <div class="field"><label>关联场次</label><select id="rvSession"></select></div>
+        <div class="field"><label>综合评分 (1-10)</label><input type="number" id="rvScore" min="1" max="10" value="6"></div>
+      </div>
+      <div class="field" style="margin-bottom:12px"><label>🌟 亮点</label><textarea id="rvHl" placeholder="这场做得好的地方…"></textarea></div>
+      <div class="field" style="margin-bottom:12px"><label>⚠️ 待改进</label><textarea id="rvIm" placeholder="哪里掉链子、什么原因…"></textarea></div>
+      <div class="field" style="margin-bottom:14px"><label>🎯 下步行动</label><textarea id="rvAc" placeholder="下场/下周要练什么…"></textarea></div>
+      <button class="btn btn-primary" id="saveReview">保存复盘</button>
+    </div>
+
+    <div class="rv-list" id="reviewList"></div>
+  </section>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== Embedded fallback data ===================== */
+const EMBEDDED_DATA = {
+  anchor:{name:"冯芊祎",startDate:"2026-06-01",level:"新人期",mainProduct:"秘纤"},
+  abilityLabels:["产品知识","话术框架","控场节奏","塑品能力","逼单转化","数据感知","情绪管理","评论互动","镜头表现","学习成长"],
+  sessions:[
+    {date:"2026-06-01",shift:"C",operator:"邢世坦",hours:4.0,gmvTotal:191215,gpmAvg:6036,uvAvg:8.98,returnRate:0.324},
+    {date:"2026-06-04",shift:"C",operator:"邓安祺",hours:4.2,gmvTotal:269000,gpmAvg:5742,uvAvg:9.09,returnRate:0.298},
+    {date:"2026-06-09",shift:"B",operator:"邢世坦",hours:3.8,gmvTotal:172000,gpmAvg:4527,uvAvg:7.65,returnRate:0.281},
+    {date:"2026-06-16",shift:"B",operator:"张佳林",hours:3.1,gmvTotal:82000,gpmAvg:5787,uvAvg:8.21,returnRate:0.265}
+  ],
+  abilities:[
+    {date:"2026-06-08",scores:{产品知识:3,话术框架:2,控场节奏:2,塑品能力:2,逼单转化:3,数据感知:1,情绪管理:3,评论互动:2,镜头表现:3,学习成长:4},comment:"首次评估，产品基础不错但数据意识薄弱"},
+    {date:"2026-06-15",scores:{产品知识:4,话术框架:3,控场节奏:3,塑品能力:2,逼单转化:3,数据感知:2,情绪管理:3,评论互动:3,镜头表现:4,学习成长:4},comment:"话术框架进步明显，数据感知开始建立，塑品能力仍需重点打磨"}
+  ],
+  weeklyPlans:[
+    {week:"2026-W24",focus:["产品知识","话术框架"],materials:["秘纤产品话术.docx","话术逻辑万能公式.mp4"],target:"GPM 稳定在 5000+，话术结构完整不散架",status:"进行中"},
+    {week:"2026-W23",focus:["镜头表现","情绪管理"],materials:["镜头表现力训练.mp4"],target:"开播状态稳定，镜头表现不僵硬",status:"已完成"}
+  ],
+  reviews:[
+    {date:"2026-06-16",sessionDate:"2026-06-16",highlight:"GPM 保持在 4800-6500，波动小，节奏控制有明显进步",toImprove:"第 1 小时冷启动慢，开场仅 4857 GPM，承接没接住",action:"练习「开场 3 分钟快速破冰」+ 前 5 分钟成交闭环",score:6},
+    {date:"2026-06-09",sessionDate:"2026-06-09",highlight:"产品讲解更熟练，秘纤核心卖点已能脱稿输出",toImprove:"中段 GPM 掉到 4527，断成交后恢复慢",action:"练习断成交后的快速恢复话术，建立返场钩子",score:5},
+    {date:"2026-06-01",sessionDate:"2026-06-01",highlight:"第 2 小时 GPM 冲到 7028，状态完全起来了",toImprove:"第 3 小时 GPM 掉到 5025，中间有 10 分钟断成交",action:"练习断成交后的快速恢复话术",score:6}
+  ],
+  materials:[
+    {id:1,category:"产品知识",name:"三代秘纤速干圆领短袖T恤话术",type:"docx"},
+    {id:2,category:"产品知识",name:"秘纤产品话术",type:"docx"},
+    {id:3,category:"话术框架",name:"话术逻辑万能公式",type:"mp4"},
+    {id:4,category:"逼单转化",name:"如何精准逼单",type:"mp4"},
+    {id:5,category:"镜头表现",name:"镜头表现力训练",type:"mp4"},
+    {id:6,category:"控场节奏",name:"直播节奏把控SOP",type:"docx"}
+  ]
+};
+
+/* ===================== Storage (graceful) ===================== */
+const STORE_KEY='anchorGrowthDashboard_v1';
+let memStore=null;
+function loadSaved(){ try{const r=localStorage.getItem(STORE_KEY); return r?JSON.parse(r):null;}catch(e){return memStore;} }
+function persist(){ const s=JSON.stringify(DATA); try{localStorage.setItem(STORE_KEY,s);}catch(e){memStore=JSON.parse(s);} }
+function clearStore(){ try{localStorage.removeItem(STORE_KEY);}catch(e){} memStore=null; }
+
+/* ===================== Helpers ===================== */
+let DATA=null, charts={};
+const LABELS=()=>DATA.abilityLabels;
+const $=id=>document.getElementById(id);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const sortByDate=(a,b)=>a.date<b.date?-1:1;
+function fmtMoney(n){ return n>=10000?(n/10000).toFixed(1)+'万':Math.round(n).toLocaleString(); }
+function avg(arr){ return arr.length?arr.reduce((s,x)=>s+x,0)/arr.length:0; }
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1900); }
+function chartReady(){ return typeof Chart!=='undefined'; }
+function fb(el,canvasId){ if(!chartReady()){ el.innerHTML='<div class="chart-fallback">图表库未加载<br>(需联网或将 Chart.js 放本地)</div>'; $(canvasId).style.display='none'; return false;} el.innerHTML=''; $(canvasId).style.display='block'; return true; }
+
+function sparkline(values,color){
+  if(!values||values.length<2) return '';
+  const w=70,h=24,p=3, min=Math.min(...values), max=Math.max(...values), range=(max-min)||1;
+  const pts=values.map((v,i)=>[p+i*(w-2*p)/(values.length-1), h-p-((v-min)/range)*(h-2*p)]);
+  const d=pts.map((pt,i)=>(i?'L':'M')+pt[0].toFixed(1)+' '+pt[1].toFixed(1)).join(' ');
+  const last=pts[pts.length-1];
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+    <circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.2" fill="${color}"/></svg>`;
+}
+function trendOf(values,lowerBetter){
+  if(values.length<2) return {cls:'trend-flat',txt:'暂无对比'};
+  const a=values[values.length-2], b=values[values.length-1];
+  if(b===a) return {cls:'trend-flat',txt:'与上场持平'};
+  const up=b>a, good=lowerBetter?!up:up;
+  return {cls:good?'trend-up':'trend-down', txt:(up?'↑':'↓')+' 较上场'+(up?'上升':'回落')};
+}
+
+/* ===================== Top bar ===================== */
+function renderTopbar(){
+  const a=DATA.anchor;
+  $('avatar').textContent=a.name.slice(0,1);
+  $('anchorName').textContent=a.name;
+  $('levelChip').textContent=a.level;
+  const days=Math.max(1,Math.round((Date.now()-new Date(a.startDate+'T00:00:00+08:00'))/86400000));
+  $('anchorMeta').innerHTML=`<span>主营 <b>${a.mainProduct}</b></span><span class="dot-sep">·</span>`+
+    `<span>入职 <b>${days}</b> 天</span><span class="dot-sep">·</span>`+
+    `<span>累计 <b>${DATA.sessions.length}</b> 场</span>`+
+	    (DATA.lastSync?`<span class="dot-sep">·</span><span>同步 <b>${DATA.lastSync}</b></span>`:'');
+	  if(DATA.lastSync) $('syncBadge').textContent='🔄 '+DATA.lastSync;
+}
+
+/* ===================== Overview ===================== */
+function renderOverview(){
+  const s=[...DATA.sessions].sort(sortByDate);
+  const latestAb=[...DATA.abilities].sort(sortByDate).slice(-1)[0];
+  const abTotal=latestAb?Object.values(latestAb.scores).reduce((x,y)=>x+y,0):0;
+  const abMax=LABELS().length*5;
+  const abHist=[...DATA.abilities].sort(sortByDate).map(a=>Object.values(a.scores).reduce((x,y)=>x+y,0));
+  const tGpm=trendOf(s.map(x=>x.gpmAvg)), tUv=trendOf(s.map(x=>x.uvAvg));
+  let abSub='尚无评估';
+  if(DATA.abilities.length){ const d=abHist.length>1?abTotal-abHist[abHist.length-2]:0;
+    abSub=DATA.anchor.level+(abHist.length>1?` · ${d>=0?'+':''}${d} 较上次`:''); }
+
+  const cards=[
+    {label:'累计 GMV', value:'¥'+fmtMoney(s.reduce((a,x)=>a+x.gmvTotal,0)), spark:s.map(x=>x.gmvTotal), color:css('--jade'),
+      sub:`共 ${s.length} 场 · 最近 ${s.length?fmtDate(s.slice(-1)[0].date):'-'}`, subCls:'', accent:css('--jade')},
+    {label:'均场 GPM', value:Math.round(avg(s.map(x=>x.gpmAvg))).toLocaleString(), spark:s.map(x=>x.gpmAvg), color:css('--cyan'),
+      sub:tGpm.txt, subCls:tGpm.cls, accent:css('--cyan')},
+    {label:'均场 UV价值', value:avg(s.map(x=>x.uvAvg)).toFixed(2), spark:s.map(x=>x.uvAvg), color:css('--violet'),
+      sub:tUv.txt, subCls:tUv.cls, accent:css('--violet')},
+    {label:'能力总分', value:abTotal, unit:'/ '+abMax, spark:abHist, color:css('--amber'),
+      sub:abSub, subCls:'', accent:css('--amber')}
+  ];
+  $('metricGrid').innerHTML=cards.map(c=>`
+    <div class="card card-pad metric">
+      <span class="accent" style="background:${c.accent}"></span>
+      <div class="label"><span>${c.label}</span>${sparkline(c.spark,c.color)}</div>
+      <div class="value num">${c.value}${c.unit?`<small>${c.unit}</small>`:''}</div>
+      <div class="sub ${c.subCls}">${c.sub}</div>
+    </div>`).join('');
+
+  // latest session summary from latest review
+  const rv=[...DATA.reviews].sort(sortByDate).slice(-1)[0];
+  const box=$('latestSummary');
+  if(rv){
+    const sess=DATA.sessions.find(x=>x.date===rv.sessionDate);
+    const meta=sess?`${fmtDate(sess.date)} · ${sess.shift}班 · 运营${sess.operator} · ${sess.hours}h · GMV ${fmtMoney(sess.gmvTotal)} · GPM ${sess.gpmAvg.toLocaleString()}`:fmtDate(rv.date);
+    box.innerHTML=`<div class="summary-meta">${meta}</div>
+      <div class="note hl"><div class="ico">★</div><div><div class="ttl">亮点</div><p>${esc(rv.highlight)}</p></div></div>
+      <div class="note im"><div class="ico">!</div><div><div class="ttl">待改进</div><p>${esc(rv.toImprove)}</p></div></div>
+      <div class="note ac"><div class="ico">▶</div><div><div class="ttl">下步行动</div><p>${esc(rv.action)}</p></div></div>`;
+  } else { box.innerHTML='<div class="empty">还没有复盘记录</div>'; }
+
+  // overview radar
+  if(latestAb && fb($('ovRadarFb'),'ovRadar')) drawRadar('ovRadar',[{label:'最新评估',data:LABELS().map(l=>latestAb.scores[l]),color:css('--jade')}]);
+  else if(!latestAb) $('ovRadarFb').innerHTML='<div class="chart-fallback">尚无能力评估数据</div>';
+}
+const fmtDate=d=>{const p=d.split('-');return `${+p[1]}/${+p[2]}`;};
+const esc=s=>(s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ===================== Radar drawing ===================== */
+function drawRadar(canvasId,datasets){
+  if(charts[canvasId]) charts[canvasId].destroy();
+  const grid=css('--line'), txt=css('--text-2');
+  charts[canvasId]=new Chart($(canvasId),{
+    type:'radar',
+    data:{ labels:LABELS(), datasets:datasets.map(d=>({
+      label:d.label, data:d.data, borderColor:d.color, backgroundColor:d.color+'22',
+      borderWidth:2, pointBackgroundColor:d.color, pointRadius:3, pointHoverRadius:5
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:txt,font:{size:12},boxWidth:12,boxHeight:12,padding:14}}},
+      scales:{r:{min:0,max:5,ticks:{stepSize:1,color:css('--text-3'),backdropColor:'transparent',font:{size:9}},
+        grid:{color:grid},angleLines:{color:grid},pointLabels:{color:txt,font:{size:11.5}}}}}
+  });
+}
+
+/* ===================== Ability tab ===================== */
+function renderAbilityTab(){
+  const evs=[...DATA.abilities].sort(sortByDate);
+  const sel=$('abilitySelect');
+  const prev=sel.value;
+  sel.innerHTML=evs.map((e,i)=>`<option value="${e.date}">${e.date}${i===evs.length-1?'（最新）':''}</option>`).reverse().join('');
+  sel.value=evs.some(e=>e.date===prev)?prev:(evs.length?evs[evs.length-1].date:'');
+  renderAbilityDetail();
+  // score inputs for new eval
+  $('evalScoreInputs').innerHTML=LABELS().map((l,i)=>`
+    <div class="score-cell"><label>${l}</label><input type="number" min="0" max="5" value="3" data-ab="${i}"></div>`).join('');
+  if(!$('evalDate').value) $('evalDate').value=new Date().toISOString().slice(0,10);
+}
+function renderAbilityDetail(){
+  const evs=[...DATA.abilities].sort(sortByDate);
+  const cur=evs.find(e=>e.date===$('abilitySelect').value);
+  if(!cur){ $('abilityRows').innerHTML='<tr><td colspan="5" class="empty">尚无评估</td></tr>'; $('abRadarFb').innerHTML='<div class="chart-fallback">尚无能力评估数据</div>'; $('evalComment').textContent=''; return; }
+  const idx=evs.indexOf(cur), prev=idx>0?evs[idx-1]:null;
+  const ds=[{label:'本次',data:LABELS().map(l=>cur.scores[l]),color:css('--jade')}];
+  if(prev) ds.push({label:'上次',data:LABELS().map(l=>prev.scores[l]),color:css('--text-3')});
+  if(fb($('abRadarFb'),'abRadar')) drawRadar('abRadar',ds);
+  $('evalComment').textContent=cur.comment?'评语：'+cur.comment:'';
+  $('abilityRows').innerHTML=LABELS().map(l=>{
+    const c=cur.scores[l], p=prev?prev.scores[l]:null, d=p!=null?c-p:null;
+    const dCell=d==null?'<span class="delta-flat">—</span>':d>0?`<span class="delta-up">↑${d}</span>`:d<0?`<span class="delta-down">↓${-d}</span>`:'<span class="delta-flat">0</span>';
+    const lvl=c<=2?{t:'待加强',c:'s1'}:c===3?{t:'合格',c:'s3'}:{t:c>=5?'优秀':'良好',c:'s4'};
+    return `<tr><td>${l}</td><td class="t-num">${c}</td><td class="t-num">${p!=null?p:'—'}</td><td class="t-num">${dCell}</td><td><span class="tag ${lvl.c}">${lvl.t}</span></td></tr>`;
+  }).join('');
+}
+
+/* ===================== Trend tab ===================== */
+const METRICS={ gmvTotal:{name:'GMV',color:'--jade',fmt:v=>'¥'+fmtMoney(v)}, gpmAvg:{name:'GPM',color:'--cyan',fmt:v=>v.toLocaleString()},
+  uvAvg:{name:'UV价值',color:'--violet',fmt:v=>v.toFixed(2)}, returnRate:{name:'退货率',color:'--coral',fmt:v=>(v*100).toFixed(1)+'%'} };
+let curMetric='gmvTotal';
+function renderTrendTab(){
+  $('metricSwitch').innerHTML=Object.keys(METRICS).map(k=>`<button class="btn btn-sm ${k===curMetric?'btn-primary':''}" data-metric="${k}">${METRICS[k].name}</button>`).join('');
+  $('metricSwitch').querySelectorAll('[data-metric]').forEach(b=>b.onclick=()=>{curMetric=b.dataset.metric; renderTrendTab();});
+  drawTrend();
+  const s=[...DATA.sessions].sort(sortByDate);
+  $('sessionRows').innerHTML=s.map(x=>`<tr>
+    <td>${fmtDate(x.date)}</td><td><span class="pill ${x.shift==='C'?'pill-c':'pill-b'}">${x.shift}班</span></td>
+    <td class="t-num">${x.hours}h</td><td class="t-num">${fmtMoney(x.gmvTotal)}</td><td class="t-num">${x.gpmAvg.toLocaleString()}</td>
+    <td class="t-num">${x.uvAvg.toFixed(2)}</td><td class="t-num">${(x.returnRate*100).toFixed(1)}%</td><td>${x.operator}</td></tr>`).join('')
+    || '<tr><td colspan="8" class="empty">尚无场次数据</td></tr>';
+}
+function drawTrend(){
+  const m=METRICS[curMetric];
+  $('trendTitle').textContent=m.name+' 趋势';
+  if(!fb($('trendFb'),'trendChart')) return;
+  const s=[...DATA.sessions].sort(sortByDate), col=css(m.color);
+  if(charts.trend) charts.trend.destroy();
+  charts.trend=new Chart($('trendChart'),{
+    type:'line',
+    data:{labels:s.map(x=>fmtDate(x.date)),datasets:[{label:m.name,data:s.map(x=>x[curMetric]),
+      borderColor:col,backgroundColor:col+'1f',borderWidth:2.5,tension:.3,fill:true,
+      pointBackgroundColor:col,pointRadius:4,pointHoverRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>m.name+'：'+m.fmt(c.parsed.y)}}},
+      scales:{x:{grid:{color:css('--line-soft')},ticks:{color:css('--text-2')}},
+        y:{grid:{color:css('--line-soft')},ticks:{color:css('--text-2'),callback:v=>m.fmt(v)}}}}
+  });
+}
+
+/* ===================== Plan tab ===================== */
+function renderPlanTab(){
+  const wks=[...DATA.weeklyPlans].sort((a,b)=>a.week<b.week?1:-1);
+  const sel=$('weekSelect'), prev=sel.value;
+  sel.innerHTML=wks.map(w=>`<option value="${w.week}">${w.week}</option>`).join('');
+  if(wks.length){ sel.value=wks.some(w=>w.week===prev)?prev:wks[0].week; loadPlan(sel.value); }
+  else newPlan();
+}
+function loadPlan(week){
+  const p=DATA.weeklyPlans.find(w=>w.week===week); if(!p) return;
+  $('planWeek').value=p.week; $('planTarget').value=p.target; $('planStatus').value=p.status;
+  renderFocusChecks(p.focus); renderPlanMaterials(p.materials);
+}
+function newPlan(){
+  $('planWeek').value=''; $('planTarget').value=''; $('planStatus').value='未开始';
+  renderFocusChecks([]); renderPlanMaterials([]);
+}
+function renderFocusChecks(focus){
+  $('focusChecks').innerHTML=LABELS().map(l=>{
+    const on=focus.includes(l);
+    return `<label class="chk ${on?'on':''}"><input type="checkbox" value="${l}" ${on?'checked':''}>${l}</label>`;}).join('');
+  $('focusChecks').querySelectorAll('.chk').forEach(c=>c.querySelector('input').onchange=e=>c.classList.toggle('on',e.target.checked));
+}
+function renderPlanMaterials(selected){
+  $('planMaterials').innerHTML=DATA.materials.map(m=>{
+    const fn=m.name+'.'+m.type, on=selected.includes(fn);
+    const subCat=m.subCategory?` · ${m.subCategory}`:'';
+	    return `<label class="mat ${on?'on':''}"><input type="checkbox" value="${fn}" ${on?'checked':''}>
+      <span class="ft ${m.type}">${m.type.toUpperCase()}</span><span class="mname">${m.name}</span><span class="mcat">${m.category}${subCat}</span></label>`;}).join('');
+  $('planMaterials').querySelectorAll('.mat').forEach(c=>c.querySelector('input').onchange=e=>c.classList.toggle('on',e.target.checked));
+}
+
+/* ===================== Review tab ===================== */
+function renderReviewTab(){
+  const sess=[...DATA.sessions].sort(sortByDate).reverse();
+  $('rvSession').innerHTML=sess.map(s=>`<option value="${s.date}">${s.date} · ${s.shift}班 · ${s.operator}</option>`).join('');
+  const rvs=[...DATA.reviews].sort(sortByDate).reverse();
+  $('reviewList').innerHTML=rvs.length?rvs.map(r=>{
+    const sc=Math.max(0,Math.min(10,r.score));
+    const dots=Array.from({length:10},(_,i)=>`<i class="${i<sc?'on':''}"></i>`).join('');
+    const sx=DATA.sessions.find(s=>s.date===r.sessionDate);
+    return `<div class="rv">
+      <div class="rv-head">
+        <div><div class="rv-date">${fmtDate(r.sessionDate)} 复盘</div>
+          <div class="rv-sess">${sx?`${sx.shift}班 · ${sx.operator} · GPM ${sx.gpmAvg.toLocaleString()}`:r.date}</div></div>
+        <div class="dots">${dots}<span class="sc">${sc}/10</span></div>
+      </div>
+      <div class="note hl"><div class="ico">★</div><div><div class="ttl">亮点</div><p>${esc(r.highlight)}</p></div></div>
+      <div class="note im"><div class="ico">!</div><div><div class="ttl">待改进</div><p>${esc(r.toImprove)}</p></div></div>
+      <div class="note ac"><div class="ico">▶</div><div><div class="ttl">下步行动</div><p>${esc(r.action)}</p></div></div>
+    </div>`;}).join(''):'<div class="empty">还没有复盘记录，点「新建复盘」开始</div>';
+}
+
+/* ===================== Tab switching ===================== */
+document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); $(b.dataset.tab).classList.add('active');
+});
+
+/* ===================== Form actions ===================== */
+$('newEvalToggle').onclick=()=>{ const f=$('newEvalForm'); f.style.display=f.style.display==='none'?'block':'none'; };
+$('saveEval').onclick=()=>{
+  const date=$('evalDate').value; if(!date){toast('请选择评估日期');return;}
+  const scores={}; $('evalScoreInputs').querySelectorAll('input').forEach(inp=>{
+    scores[LABELS()[+inp.dataset.ab]]=Math.max(0,Math.min(5,+inp.value||0));});
+  const ex=DATA.abilities.find(a=>a.date===date);
+  if(ex){ex.scores=scores;ex.comment=$('evalCommentInput').value;}
+  else DATA.abilities.push({date,scores,comment:$('evalCommentInput').value});
+  persist(); $('newEvalForm').style.display='none'; $('evalCommentInput').value='';
+  renderAll(); $('abilitySelect').value=date; renderAbilityDetail(); toast('评估已保存');
+};
+$('abilitySelect').onchange=renderAbilityDetail;
+
+$('newPlanBtn').onclick=()=>{ newPlan(); $('planWeek').focus(); };
+$('weekSelect').onchange=e=>loadPlan(e.target.value);
+$('savePlan').onclick=()=>{
+  const week=$('planWeek').value.trim(); if(!week){toast('请填写周次');return;}
+  const focus=[...$('focusChecks').querySelectorAll('input:checked')].map(i=>i.value);
+  const materials=[...$('planMaterials').querySelectorAll('input:checked')].map(i=>i.value);
+  const obj={week,focus,materials,target:$('planTarget').value,status:$('planStatus').value};
+  const ex=DATA.weeklyPlans.find(w=>w.week===week);
+  if(ex) Object.assign(ex,obj); else DATA.weeklyPlans.push(obj);
+  persist(); renderPlanTab(); $('weekSelect').value=week; loadPlan(week); toast('计划已保存');
+};
+
+$('newReviewToggle').onclick=()=>{ const f=$('newReviewForm'); f.style.display=f.style.display==='none'?'block':'none'; };
+$('saveReview').onclick=()=>{
+  const sd=$('rvSession').value; if(!sd){toast('请先添加场次数据');return;}
+  const hl=$('rvHl').value.trim(), im=$('rvIm').value.trim(), ac=$('rvAc').value.trim();
+  if(!hl&&!im&&!ac){toast('至少填写一项内容');return;}
+  DATA.reviews.push({date:new Date().toISOString().slice(0,10),sessionDate:sd,highlight:hl,toImprove:im,action:ac,score:Math.max(1,Math.min(10,+$('rvScore').value||6))});
+  persist(); ['rvHl','rvIm','rvAc'].forEach(id=>$(id).value=''); $('newReviewForm').style.display='none';
+  renderReviewTab(); renderOverview(); toast('复盘已保存');
+};
+
+/* ===================== Data IO ===================== */
+$('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='data.json'; a.click();
+  URL.revokeObjectURL(a.href); toast('已导出 data.json');
+};
+$('importBtn').onclick=()=>$('fileInput').click();
+$('fileInput').onchange=e=>{
+  const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{ try{ DATA=JSON.parse(rd.result); persist(); renderAll(); toast('数据已导入'); }catch(err){ toast('文件解析失败，请检查 JSON 格式'); } };
+  rd.readAsText(f); e.target.value='';
+};
+$('resetBtn').onclick=async()=>{
+  if(!confirm('重置将清除本地保存的修改，恢复到 data.json / 初始数据，确定吗？')) return;
+  clearStore(); DATA=await loadInitial(true); renderAll(); toast('已重置');
+};
+
+/* ===================== Init ===================== */
+async function loadInitial(skipSaved){
+  if(!skipSaved){ const s=loadSaved(); if(s) return s; }
+  try{ const r=await fetch('data.json',{cache:'no-store'}); if(r.ok) return await r.json(); }catch(e){}
+  return clone(EMBEDDED_DATA);
+}
+function renderAll(){
+  renderTopbar(); renderOverview(); renderAbilityTab(); renderTrendTab(); renderPlanTab(); renderReviewTab();
+}
+(async()=>{
+  DATA=await loadInitial(false);
+  if(!DATA.lastSync){
+    const s=DATA.sessions; if(s&&s.length) DATA.lastSync=s[s.length-1].date;
+  }
+  renderAll();
+})();
+</script>
+</body>
+</html>
