@@ -26,8 +26,8 @@ class FeishuClient:
         app_id = st.secrets.get("FEISHU_APP_ID", os.environ.get("FEISHU_APP_ID", "cli_a876dccb3d7a101c"))
         app_secret = st.secrets.get("FEISHU_APP_SECRET", os.environ.get("FEISHU_APP_SECRET", "eTURY2xNmRaSBR6nratpsdn86ENxssTA"))
         try:
-            r = requests.post(verify=False, f"{BASE_URL}/auth/v3/tenant_access_token/internal",
-                              json={"app_id": app_id, "app_secret": app_secret}, verify=False, timeout=15)
+            r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
+                              json={"app_id": app_id, "app_secret": app_secret}, timeout=15, verify=False)
             data = r.json()
             if data.get("code") != 0:
                 raise RuntimeError(f"飞书 Token 失败: {data}")
@@ -50,9 +50,8 @@ class FeishuClient:
             params = {"page_size": page_size}
             if page_token:
                 params["page_token"] = page_token
-            r = requests.get(verify=False, 
-                f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables/{table_id}/records",
-                params=params, headers=self._headers(), timeout=60)
+            r = requests.get(f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables/{table_id}/records",
+                params=params, headers=self._headers(), timeout=60, verify=False)
             data = r.json()
             if data.get("code") != 0:
                 st.error(f"API 错误: {data.get('msg')}")
@@ -143,18 +142,17 @@ class FeishuClient:
     def _ensure_growth_table(self):
         """确保成长管理表存在，不存在则创建"""
         # 先检查是否已存在
-        r = requests.get(verify=False, f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables",
-                         headers=self._headers(), timeout=15)
+        r = requests.get(f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables",
+                         headers=self._headers(), timeout=15, verify=False)
         tables = r.json().get("data", {}).get("items", [])
         for t in tables:
             if t.get("name") == "主播成长管理":
                 return t["table_id"]
 
         # 创建新表
-        r = requests.post(verify=False, 
-            f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables",
+        r = requests.post(f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables",
             headers=self._headers(),
-            json={"table": {"name": "主播成长管理"}}, timeout=15)
+            json={"table": {"name": "主播成长管理"}}, timeout=15, verify=False)
         data = r.json()
         if data.get("code") != 0:
             st.warning(f"创建成长管理表失败: {data.get('msg')}")
@@ -169,9 +167,8 @@ class FeishuClient:
             {"field_name": "数据JSON", "type": 1},   # 存整个 JSON
         ]
         for f in fields:
-            requests.post(verify=False, 
-                f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables/{table_id}/fields",
-                headers=self._headers(), json={"field_name": f["field_name"], "type": f["type"]}, timeout=15)
+            requests.post(f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables/{table_id}/fields",
+                headers=self._headers(), json={"field_name": f["field_name"], "type": f["type"]}, timeout=15, verify=False)
         return table_id
 
     def save_growth_data(self, data_type, anchor, date_str, json_data):

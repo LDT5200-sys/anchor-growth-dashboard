@@ -12,8 +12,8 @@ APP_ID = "cli_a876dccb3d7a101c"
 APP_SECRET = "eTURY2xNmRaSBR6nratpsdn86ENxssTA"
 
 def get_token():
-    r = requests.post(verify=False, f"{BASE_URL}/auth/v3/tenant_access_token/internal",
-        json={"app_id": APP_ID, "app_secret": APP_SECRET}, verify=False, timeout=15)
+    r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
+        json={"app_id": APP_ID, "app_secret": APP_SECRET}, timeout=15, verify=False)
     return r.json()["tenant_access_token"]
 
 @st.cache_data(ttl=1800, show_spinner="📡 加载蝉管家退货率数据...")
@@ -28,9 +28,8 @@ def load_anchor_returns():
         params = {"page_size": 500}
         if page_token:
             params["page_token"] = page_token
-        r = requests.get(verify=False, 
-            f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables/{TABLE_ID}/records",
-            params=params, headers=headers, verify=False, timeout=60)
+        r = requests.get(f"{BASE_URL}/bitable/v1/apps/{BASE_TOKEN}/tables/{TABLE_ID}/records",
+            params=params, headers=headers, timeout=60, verify=False)
         data = r.json()
         if data.get("code") != 0:
             return [], f"API错误: {data.get('msg')}"
