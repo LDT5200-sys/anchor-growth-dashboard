@@ -2,11 +2,9 @@
 
 import streamlit as st
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from feishu_client import get_cached_sessions
-import pandas as pd
 
-st.markdown('<div class="main-header">📈 业绩趋势对比</div>', unsafe_allow_html=True)
+st.title("📈 业绩趋势对比")
 
 sessions = get_cached_sessions()
 all_anchors = sorted(set(s["anchor"] for s in sessions))
@@ -26,8 +24,7 @@ if not selected:
 # 指标选择
 metric = st.radio("对比指标", ["GPM", "GMV", "UV价值", "退货率"], horizontal=True)
 metric_key = {"GPM": "gpmAvg", "GMV": "gmvTotal", "UV价值": "uvAvg", "退货率": "returnRate"}[metric]
-metric_fmt = {"GPM": "{:,}", "GMV": "¥{:,.0f}", "UV价值": "{:.2f}", "退货率": "{:.1%}"}[metric]
-colors = ["#46CC8D", "#5BA8E0", "#E8B06A", "#E47A63", "#8E8BE0", "#9298AA"]
+colors = ["#2E7D32", "#1565C0", "#E65100", "#6A1B9A", "#C62828", "#00838F", "#4E342E"]
 
 # 趋势图
 fig = go.Figure()
@@ -39,20 +36,21 @@ for i, name in enumerate(selected):
     dates = [s["date"][5:] for s in data]
     vals = [s[metric_key] for s in data]
     if metric == "退货率":
-        vals = [v * 100 for v in vals]  # 转百分比
+        vals = [v * 100 for v in vals]
 
     fig.add_trace(go.Scatter(x=dates, y=vals, mode='lines+markers', name=name,
                              line=dict(color=colors[i % len(colors)], width=2.5),
-                             marker=dict(size=6)))
+                             marker=dict(size=8)))
 
-fig.update_layout(height=400, margin=dict(l=10, r=10, t=10, b=10),
-                  paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                  font_color="#9298AA", legend=dict(orientation="h", yanchor="top", y=-0.15),
-                  xaxis=dict(gridcolor="#2B3242"), yaxis=dict(gridcolor="#2B3242", title=metric))
+fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10),
+                  plot_bgcolor="white", paper_bgcolor="white",
+                  legend=dict(orientation="h", yanchor="top", y=-0.2, x=0),
+                  yaxis=dict(title=metric, gridcolor="#E0E0E0"),
+                  xaxis=dict(gridcolor="#E0E0E0"))
 st.plotly_chart(fig, use_container_width=True)
 
 # 汇总对比表
-st.markdown("---")
+st.divider()
 st.subheader("📊 汇总对比")
 
 rows = []
@@ -71,11 +69,11 @@ for name in selected:
         "均退货率": f"{sum(s['returnRate'] for s in data)/len(data)*100:.1f}%",
     })
 
-df = pd.DataFrame(rows)
-st.dataframe(df, use_container_width=True, hide_index=True)
+if rows:
+    st.dataframe(rows, use_container_width=True, hide_index=True)
 
 # 逐场明细
-st.markdown("---")
+st.divider()
 st.subheader("📋 逐场明细")
 
 all_data = []
@@ -86,10 +84,10 @@ for name in selected:
 all_data.sort(key=lambda s: (s["anchor"], s["date"]))
 
 if all_data:
-    detail = pd.DataFrame([{
+    detail_rows = [{
         "主播": s["anchor"], "日期": s["date"], "班次": s["shift"],
-        "时长": f"{s['hours']}h", "GMV": s["gmvTotal"],
-        "GPM": s["gpmAvg"], "UV": s["uvAvg"],
+        "时长(h)": s["hours"], "GMV": f"¥{s['gmvTotal']:,}",
+        "GPM": f"{s['gpmAvg']:,}", "UV": s["uvAvg"],
         "退货率": f"{s['returnRate']*100:.1f}%", "运营": s["operator"],
-    } for s in all_data])
-    st.dataframe(detail, use_container_width=True, hide_index=True)
+    } for s in all_data]
+    st.dataframe(detail_rows, use_container_width=True, hide_index=True)
