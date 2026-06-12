@@ -3,7 +3,7 @@
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
-from feishu_client import get_cached_sessions
+from feishu_client import get_cached_sessions, fmt_date
 
 st.title("🎯 主播成长看板")
 
@@ -37,7 +37,7 @@ c2.metric("均场 GPM", f"{avg_gpm:,}")
 c3.metric("均场 UV", f"{avg_uv}")
 c4.metric("均退货率", f"{avg_ret}%")
 latest = sessions[-1]
-c5.metric("最近 GPM", f"{latest['gpmAvg']:,}", delta=f"{latest['date'][5:]}")
+c5.metric("最近 GPM", f"{latest['gpmAvg']:,}", delta=fmt_date(latest['date']))
 
 st.divider()
 
@@ -54,7 +54,7 @@ with left:
 
     # 最近5场趋势
     recent = sessions[-5:] if len(sessions) >= 5 else sessions
-    fig = px.line(x=[r["date"][5:] for r in recent], y=[r["gpmAvg"] for r in recent],
+    fig = px.line(x=[fmt_date(r["date"]) for r in recent], y=[r["gpmAvg"] for r in recent],
                   markers=True, title=f"近{len(recent)}场 GPM 趋势")
     fig.update_traces(line=dict(color="#2E7D32", width=3), marker=dict(size=8, color="#2E7D32"))
     fig.update_layout(height=280, margin=dict(l=10, r=10, t=40, b=10),

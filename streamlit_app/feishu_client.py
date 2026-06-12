@@ -197,9 +197,14 @@ class FeishuClient:
         return 0.0
 
 
-@st.cache_data(ttl=300)
+def fmt_date(date_str):
+    """2026-05-25 → 5/25"""
+    parts = date_str.split("-")
+    return f"{int(parts[1])}/{int(parts[2])}"
+
+@st.cache_data(ttl=1800, show_spinner="📡 正在同步飞书数据...")
 def get_cached_sessions():
-    """5分钟缓存的场次数据"""
+    """30分钟缓存的场次数据"""
     client = FeishuClient()
     return client.get_sessions()
 

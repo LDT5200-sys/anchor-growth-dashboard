@@ -2,7 +2,7 @@
 
 import streamlit as st
 import plotly.graph_objects as go
-from feishu_client import get_cached_sessions
+from feishu_client import get_cached_sessions, fmt_date
 
 st.title("📈 业绩趋势对比")
 
@@ -33,7 +33,7 @@ for i, name in enumerate(selected):
     data.sort(key=lambda s: s["date"])
     if not data:
         continue
-    dates = [s["date"][5:] for s in data]
+    dates = [fmt_date(s["date"]) for s in data]
     vals = [s[metric_key] for s in data]
     if metric == "退货率":
         vals = [v * 100 for v in vals]
