@@ -11,6 +11,13 @@ TABLE_ID = "tblVwBR0551V40uZ"  # 大方主播退货率
 APP_ID = "cli_a876dccb3d7a101c"
 APP_SECRET = "eTURY2xNmRaSBR6nratpsdn86ENxssTA"
 
+def num(v, default=0.0):
+    """安全转换为数字"""
+    try:
+        return float(v) if v is not None else default
+    except (ValueError, TypeError):
+        return default
+
 def get_token():
     r = requests.post(f"{BASE_URL}/auth/v3/tenant_access_token/internal",
         json={"app_id": APP_ID, "app_secret": APP_SECRET}, timeout=15, verify=False)
@@ -75,8 +82,8 @@ if sel_date != "全部":
     filtered = [r for r in filtered if r.get("记录日期") == sel_date]
 
 # === 汇总指标 ===
-total_sales = sum((r.get("蝉管家主播销售额") or 0) for r in filtered)
-total_returns = sum((r.get("禅管家主播退款金额") or 0) for r in filtered)
+total_sales = sum(num(r.get("蝉管家主播销售额")) for r in filtered)
+total_returns = sum(num(r.get("禅管家主播退款金额")) for r in filtered)
 overall_rate = round(total_returns / total_sales * 100, 1) if total_sales > 0 else 0
 
 c1, c2, c3 = st.columns(3)
@@ -92,8 +99,8 @@ st.subheader("🏆 主播退货率排名")
 anchor_totals = defaultdict(lambda: {"sales": 0, "returns": 0})
 for r in records:
     a = r.get("蝉管家主播名字", "")
-    anchor_totals[a]["sales"] += r.get("蝉管家主播销售额") or 0
-    anchor_totals[a]["returns"] += r.get("禅管家主播退款金额") or 0
+    anchor_totals[a]["sales"] += num(r.get("蝉管家主播销售额"))
+    anchor_totals[a]["returns"] += num(r.get("禅管家主播退款金额"))
 
 ranking = []
 for a, v in anchor_totals.items():
@@ -132,12 +139,12 @@ if fqx_data:
     dates = [r.get("记录日期", "")[5:] for r in fqx_data]
     rates = []
     for r in fqx_data:
-        s = r.get("蝉管家主播销售额") or 0
-        ret = r.get("禅管家主播退款金额") or 0
+        s = num(r.get("蝉管家主播销售额"))
+        ret = num(r.get("禅管家主播退款金额"))
         rates.append(round(ret / s * 100, 1) if s > 0 else 0)
 
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=dates, y=[(r.get("蝉管家主播销售额") or 0)/10000 for r in fqx_data],
+    fig.add_trace(go.Bar(x=dates, y=[(num(r.get("蝉管家主播销售额")))/10000 for r in fqx_data],
                           name="销售额(万)", marker_color="#E8E8E8", yaxis="y2"))
     fig.add_trace(go.Scatter(x=dates, y=rates, name="退货率%",
                               mode="lines+markers", line=dict(color="#E53935", width=2.5),
