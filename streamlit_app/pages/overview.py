@@ -106,6 +106,7 @@ with right:
         if pk_gpms:
             fig = px.box(pd.DataFrame(pk_gpms), x="主播", y="GPM", color="主播",
                          color_discrete_sequence=["#E53935", "#FB8C00", "#2E7D32"])
+            fig.update_traces(hoverinfo="none")  # 隐藏箱线统计标签
             fig.update_layout(height=250, margin=dict(l=10, r=10, t=10, b=10),
                               showlegend=False, plot_bgcolor="white")
             st.plotly_chart(fig, use_container_width=True)
