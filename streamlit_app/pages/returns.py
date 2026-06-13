@@ -534,5 +534,62 @@ with tab5:
                                 st.markdown(f"- {m}")
                         else:
                             st.success("全部覆盖 ✅")
+
+            # === AI 总结分析 ===
+            st.divider()
+            st.subheader("🤖 AI 总结分析")
+
+            api_key = st.text_input("Anthropic API Key", type="password",
+                                    placeholder="sk-ant-...", key="ai_key",
+                                    help="留空则使用默认Key")
+
+            if st.button("🔍 AI 分析话术", type="primary", use_container_width=True):
+                with st.spinner("AI 分析中..."):
+                    # 构建分析上下文
+                    valid_results = [r for r in results if "error" not in r]
+                    context = f"""你是直播带货话术教练。请分析以下新主播的秘纤产品话术覆盖情况，给出具体评价。
+
+## 秘纤核心卖点清单（共24项）
+🎬开篇：龙牙自主研发速干面料、高端+亲肤+速干三合一
+💧轻爽科技：柔软透气、不变形不缩水、不发黄久洗如新、风车型导汗、透气对比、腋下网孔
+💎价值感：日常通勤场景、做工走线细节、六边形总结、大几百对比
+🔧补充：领口罗纹、腋下立体、四面弹力、侧摆口袋
+📏尺码：13尺码体系、引导身高体重
+🎁活动：618机制讲清、平台品牌双重补贴、合并付款更划算、限时紧迫感
+🛡️售后：质保顺丰无理由运费险、价值逼单
+⚠️红线：禁讲排汗
+
+## 各主播话术覆盖情况
+"""
+                    for r in valid_results:
+                        context += f"\n### {r['anchor']}：覆盖率 {r['pct']}%（{r['covered']}/{r['total']}）\n"
+                        missed = [d[1] for d in r["details"] if d[0] == "❌"]
+                        hit = [d[1] for d in r["details"] if d[0] == "✅"]
+                        if missed:
+                            context += f"遗漏：{'、'.join(missed)}\n"
+                        if hit:
+                            context += f"命中：{'、'.join(hit[:5])}...\n"
+
+                    context += f"\n对比模式：{mode}\n请输出：1.各主播优缺点 2.谁表现更好及原因 3.各自最需要提升的3个点 4.具体练习建议。用中文回答，简洁直接。"
+
+                    try:
+                        import requests as req
+                        actual_key = api_key.strip() if api_key.strip() else None
+                        if not actual_key:
+                            actual_key = "sk-ant"  # fallback
+                        resp = req.post("https://api.anthropic.com/v1/messages",
+                            headers={"x-api-key": actual_key, "anthropic-version": "2023-06-01",
+                                     "Content-Type": "application/json"},
+                            json={"model": "claude-sonnet-4-6", "max_tokens": 800,
+                                  "messages": [{"role": "user", "content": context}]},
+                            timeout=30)
+                        if resp.status_code == 200:
+                            ai_text = resp.json()["content"][0]["text"]
+                            st.markdown("### 🤖 AI 分析")
+                            st.markdown(ai_text)
+                        else:
+                            st.error(f"API 错误 ({resp.status_code}): {resp.text[:200]}")
+                    except Exception as e:
+                        st.error(f"AI 调用失败：{e}。请检查 API Key 是否正确。")
     else:
         st.info("💡 从蝉管家导出「视频话术」xlsx 文件，拖入上方即可自动分析。支持多个文件同时上传对比。")
