@@ -8,7 +8,7 @@ st.title("📈 业绩趋势对比")
 
 all_raw = get_cached_sessions()
 # 过滤试播/短场（<2小时），只保留正式场次
-sessions = [s for s in all_raw if s["hours"] >= 2]
+sessions = [s for s in all_raw if s["hours"] >= 2.5]
 all_anchors = sorted(set(s["anchor"] for s in sessions))
 
 if not all_anchors:
