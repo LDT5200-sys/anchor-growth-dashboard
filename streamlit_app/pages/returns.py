@@ -566,20 +566,37 @@ with tab5:
                     context += f"\n对比模式：{mode}\n请输出：1.各主播优缺点 2.谁表现更好及原因 3.各自最需要提升的3个点 4.具体练习建议。用中文回答，简洁直接。"
 
                     try:
-                        import requests as req
-                        resp = req.post(
-                            "https://api.siliconflow.cn/v1/chat/completions",
-                            headers={"Authorization": "Bearer " + (st.secrets.get("SILICONFLOW_KEY", os.environ.get("SILICONFLOW_KEY", ""))),
-                                     "Content-Type": "application/json"},
-                            json={"model": "deepseek-ai/DeepSeek-V3", "max_tokens": 800,
-                                  "messages": [{"role": "user", "content": context}]},
-                            timeout=60)
-                        if resp.status_code == 200:
-                            ai_text = resp.json()["choices"][0]["message"]["content"]
+                        import requests as req, time
+                        key = st.secrets.get("SILICONFLOW_KEY", os.environ.get("SILICONFLOW_KEY", ""))
+                        headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                        # 依次尝试不同模型（DeepSeek-V3 高峰期容易503）
+                        models = [
+                            "Qwen/Qwen3-235B-A22B-Instruct-2507",
+                            "deepseek-ai/DeepSeek-V2.5",
+                            "deepseek-ai/DeepSeek-V3",
+                        ]
+                        ai_text = None
+                        for model in models:
+                            resp = req.post(
+                                "https://api.siliconflow.cn/v1/chat/completions",
+                                headers=headers,
+                                json={"model": model, "max_tokens": 600,
+                                      "messages": [{"role": "user", "content": context}]},
+                                timeout=60)
+                            if resp.status_code == 200:
+                                ai_text = resp.json()["choices"][0]["message"]["content"]
+                                break
+                            elif resp.status_code == 503:
+                                time.sleep(1)  # 模型忙，换个试试
+                                continue
+                            else:
+                                st.error(f"API 错误 ({resp.status_code}): {resp.text[:300]}")
+                                break
+                        if ai_text:
                             st.markdown("### 🤖 AI 分析")
                             st.markdown(ai_text)
-                        else:
-                            st.error(f"API 错误 ({resp.status_code}): {resp.text[:300]}")
+                        elif not st.session_state.get("_ai_error_shown"):
+                            st.error("所有模型均繁忙，请稍后重试")
                     except Exception as e:
                         st.error(f"AI 调用失败：{e}")
     else:
