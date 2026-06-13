@@ -576,9 +576,9 @@ with tab5:
                             resp = req.post(
                                 "https://api.moonshot.cn/v1/chat/completions",
                                 headers=headers,
-                                json={"model": model, "max_tokens": 600,
+                                json={"model": model, "max_tokens": 2000,
                                       "messages": [{"role": "user", "content": context}]},
-                                timeout=60)
+                                timeout=120)
                             if resp.status_code == 200:
                                 ai_text = resp.json()["choices"][0]["message"]["content"]
                                 break
@@ -591,8 +591,7 @@ with tab5:
                         if ai_text:
                             st.markdown("### 🤖 AI 分析")
                             st.markdown(ai_text)
-                        elif not st.session_state.get("_ai_error_shown"):
-                            st.error("所有模型均繁忙，请稍后重试")
+
                     except Exception as e:
                         st.error(f"AI 调用失败：{e}")
     else:
