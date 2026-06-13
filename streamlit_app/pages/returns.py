@@ -567,14 +567,14 @@ with tab5:
 
                     try:
                         import requests as req, time
-                        key = st.secrets.get("SILICONFLOW_KEY", os.environ.get("SILICONFLOW_KEY", ""))
+                        key = st.secrets.get("KIMI_KEY", os.environ.get("KIMI_KEY", ""))
                         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
                         # 依次尝试不同模型（DeepSeek-V3 高峰期容易503）
-                        models = ["Pro/zai-org/GLM-4.7"]
+                        models = ["kimi-k2.6"]
                         ai_text = None
                         for model in models:
                             resp = req.post(
-                                "https://api.siliconflow.cn/v1/chat/completions",
+                                "https://api.moonshot.cn/v1/chat/completions",
                                 headers=headers,
                                 json={"model": model, "max_tokens": 600,
                                       "messages": [{"role": "user", "content": context}]},
