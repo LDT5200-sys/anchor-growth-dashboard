@@ -28,34 +28,38 @@ metric = st.radio("对比指标", ["GPM", "GMV", "UV价值", "退货率"], horiz
 metric_key = {"GPM": "gpmAvg", "GMV": "gmvTotal", "UV价值": "uvAvg", "退货率": "returnRate"}[metric]
 colors = ["#2E7D32", "#1565C0", "#E65100", "#6A1B9A", "#C62828", "#00838F", "#4E342E"]
 
-# 统一 x 轴：收集所有日期，排序
-all_dates = sorted(set(
-    fmt_date(s["date"])
-    for name in selected
-    for s in sessions if s["anchor"] == name
-), key=lambda d: d)  # 补零后的日期字符串天然有序
-
+# 趋势图（各主播用自己的日期，补零保证排序正确）
 fig = go.Figure()
 for i, name in enumerate(selected):
-    anchor_data = [s for s in sessions if s["anchor"] == name]
-    # 构建日期→值的映射
-    date_val = {fmt_date(s["date"]): s[metric_key] for s in anchor_data}
+    data = [s for s in sessions if s["anchor"] == name]
+    data.sort(key=lambda s: s["date"])
+    if not data:
+        continue
+    dates = [fmt_date(s["date"]) for s in data]
+    vals = [s[metric_key] for s in data]
     if metric == "退货率":
-        date_val = {k: v * 100 for k, v in date_val.items()}
+        vals = [v * 100 for v in vals]
 
-    y_vals = [date_val.get(d, None) for d in all_dates]  # 缺失日期填 None
-
-    fig.add_trace(go.Scatter(x=all_dates, y=y_vals, mode='lines+markers', name=name,
+    fig.add_trace(go.Scatter(x=dates, y=vals, mode='lines+markers', name=name,
                              line=dict(color=colors[i % len(colors)], width=2.5),
                              marker=dict(size=8),
                              connectgaps=False,
                              hovertemplate=f"{name}<br>%{{x}}: %{{y:,}}<extra></extra>"))
 
+# 收集所有日期并排序，确保多主播时 x 轴不乱
+all_dates = sorted(set(
+    fmt_date(s["date"])
+    for name in selected
+    for s in sessions if s["anchor"] == name
+))
+
 fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10),
                   plot_bgcolor="white", paper_bgcolor="white",
                   legend=dict(orientation="h", yanchor="top", y=-0.2, x=0),
                   yaxis=dict(title=metric, gridcolor="#E0E0E0"),
-                  xaxis=dict(gridcolor="#E0E0E0", type="category"))
+                  xaxis=dict(gridcolor="#E0E0E0",
+                             categoryorder="array",
+                             categoryarray=all_dates))
 st.plotly_chart(fig, use_container_width=True)
 
 # 汇总对比表
