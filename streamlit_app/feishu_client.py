@@ -132,11 +132,15 @@ class FeishuClient:
         return sessions
 
     def get_all_anchors(self):
-        """获取所有主播列表"""
-        sessions = self.get_sessions()
+        """获取所有主播列表（直接从原始数据提取，不依赖聚合）"""
+        records = self.fetch_all_records(TABLE_SESSIONS)
         seen = set()
-        for s in sessions:
-            seen.add(s["anchor"])
+        for rec in records:
+            fds = rec.get("fields", {})
+            names = self._text_list(fds.get("主播姓名", []))
+            for n in names:
+                if n:
+                    seen.add(n)
         return sorted(seen)
 
     def get_anchor_sessions(self, anchor_name):
