@@ -394,14 +394,26 @@ with tab5:
                     if cells:
                         rows.append(cells)
 
-                # 提取主播话术
+                # 提取主播话术 + 时间段分析
                 anchor_text = ""
+                time_segments = []  # 时间段统计
                 for row_data in rows[1:]:
                     content = row_data.get('B', '')
+                    time_range = row_data.get('A', '')
+                    seg_sentences = 0
+                    seg_text = ""
                     for line in content.split('\n'):
                         line = line.strip()
                         if line.startswith('主播:'):
                             anchor_text += line[3:].strip() + ' '
+                            seg_sentences += 1
+                            seg_text += line[3:].strip() + ' '
+                    if time_range:
+                        time_segments.append({
+                            "time": time_range,
+                            "sentences": seg_sentences,
+                            "text": seg_text[:100]
+                        })
 
                 # 检测覆盖（简化版）
                 checks = [
@@ -444,6 +456,19 @@ with tab5:
                             covered += 1
 
                 z.close()
+                # 时间节奏分析
+                total_duration = 0
+                if time_segments:
+                    try:
+                        t0 = time_segments[0]["time"].split("-")[0]
+                        tn = time_segments[-1]["time"].split("-")[1] if "-" in time_segments[-1]["time"] else time_segments[-1]["time"]
+                        def to_min(t):
+                            parts = t.split(":")
+                            return int(parts[0]) * 60 + int(parts[1])
+                        total_duration = to_min(tn) - to_min(t0)
+                    except:
+                        pass
+
                 return {
                     "anchor": anchor_label,
                     "total": len(checks),
@@ -451,6 +476,8 @@ with tab5:
                     "pct": round(covered / len(checks) * 100),
                     "details": details,
                     "sentences": len([l for l in anchor_text.split('。') if l.strip()]),
+                    "time_segments": time_segments,
+                    "total_minutes": total_duration,
                 }
             except Exception as e:
                 return {"anchor": anchor_label, "error": str(e)}
@@ -543,7 +570,14 @@ with tab5:
             if st.button("🔍 AI 分析话术", type="primary", use_container_width=True):
                 with st.spinner("AI 分析中..."):
                     valid_results = [r for r in results if "error" not in r]
-                    context = f"""你是直播带货话术教练。请分析以下新主播的秘纤产品话术覆盖情况，给出具体评价。
+                    context = f"""你是直播带货话术教练。请分析以下新主播的秘纤产品话术覆盖情况，结合话术节奏，给出具体评价。
+
+## 评价维度
+1. 卖点覆盖率（哪些讲了哪些漏了）
+2. 话术节奏（每轮时长是否合理，5分钟一轮为标准）
+3. 是否有拖节奏或被公屏带偏的迹象
+4. 哪个环节缺失或过长
+5. 和竞品主播的差异
 
 ## 秘纤核心卖点清单（共24项）
 🎬开篇：龙牙自主研发速干面料、高端+亲肤+速干三合一
@@ -559,6 +593,10 @@ with tab5:
 """
                     for r in valid_results:
                         context += f"\n### {r['anchor']}：覆盖率 {r['pct']}%（{r['covered']}/{r['total']}）\n"
+                        if r.get("total_minutes"):
+                            segs = r.get("time_segments", [])
+                            seg_info = " → ".join([f"{s['time']}({s['sentences']}句)" for s in segs])
+                            context += f"总时长约{r['total_minutes']}分钟，时间段分布：{seg_info}\n"
                         missed = [d[1] for d in r["details"] if d[0] == "❌"]
                         if missed:
                             context += f"遗漏：{'、'.join(missed)}\n"
