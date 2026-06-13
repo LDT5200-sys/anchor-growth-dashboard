@@ -8,6 +8,10 @@ from feishu_client import get_cached_sessions, fmt_date
 
 st.title("🎯 主播成长看板")
 
+if st.button("🔄 刷新数据", type="secondary", help="清除缓存，重新从飞书拉取最新数据"):
+    st.cache_data.clear()
+    st.rerun()
+
 all_sessions = get_cached_sessions()
 all_anchors = sorted(set(s["anchor"] for s in all_sessions))
 default_anchor = "冯芊祎" if "冯芊祎" in all_anchors else (all_anchors[0] if all_anchors else None)

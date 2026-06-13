@@ -126,6 +126,9 @@ avg_rate = round(sum(all_rates)/len(all_rates), 1) if all_rates else 0
 
 # ============================================
 st.title("🎯 冯芊祎 · 专属辅导面板")
+if st.button("🔄 刷新数据", type="secondary"):
+    st.cache_data.clear()
+    st.rerun()
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("累计销售额", f"¥{r_data['sales']/10000:.1f}万")
