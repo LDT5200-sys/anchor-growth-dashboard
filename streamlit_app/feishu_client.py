@@ -115,7 +115,7 @@ class FeishuClient:
             sessions.append({
                 "anchor": name, "date": date,
                 "shift": sorted(shifts)[0] if shifts else "?",
-                "operator": sorted(ops)[0] if ops else "?",
+                "operator": "、".join(sorted(ops)) if ops else "?",
                 "hours": round(sum(hours_l), 1),
                 "gmvTotal": round(sum(gmv_l)),
                 "gpmAvg": round(sum(gpm_l) / len(gpm_l)) if gpm_l else 0,
