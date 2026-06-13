@@ -6,9 +6,21 @@ from feishu_client import get_cached_sessions, fmt_date
 
 st.title("📈 业绩趋势对比")
 
+# 日期筛选（与概览页同步）
+col1, col2 = st.columns(2)
+with col1:
+    df = st.text_input("开始日期", value=st.session_state.get("date_from", "2026-01-01"), key="trend_from")
+    if df: st.session_state.date_from = df
+with col2:
+    dt = st.text_input("结束日期", value=st.session_state.get("date_to", "2026-12-31"), key="trend_to")
+    if dt: st.session_state.date_to = dt
+
 all_raw = get_cached_sessions()
-# 过滤试播/短场（<2小时），只保留正式场次
-sessions = [s for s in all_raw if s["hours"] >= 2.5]
+# 过滤
+sessions = [s for s in all_raw
+            if s["hours"] >= 2.5
+            and s["date"] >= st.session_state.get("date_from", "2026-01-01")
+            and s["date"] <= st.session_state.get("date_to", "2026-12-31")]
 all_anchors = sorted(set(s["anchor"] for s in sessions))
 
 if not all_anchors:

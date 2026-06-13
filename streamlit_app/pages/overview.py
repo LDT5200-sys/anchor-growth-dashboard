@@ -8,11 +8,30 @@ from feishu_client import get_cached_sessions, fmt_date
 
 st.title("🎯 主播成长看板")
 
-if st.button("🔄 刷新数据", type="secondary", help="清除缓存，重新从飞书拉取最新数据"):
-    st.cache_data.clear()
-    st.rerun()
+# 日期筛选器
+col_btn, col_from, col_to = st.columns([1, 2, 2])
+with col_btn:
+    if st.button("🔄 刷新数据", type="secondary"):
+        st.cache_data.clear()
+        st.rerun()
 
-all_sessions = get_cached_sessions()
+# 从 session_state 读取或初始化日期范围
+if "date_from" not in st.session_state:
+    all_raw = get_cached_sessions()
+    dates = sorted(set(s["date"] for s in all_raw))
+    st.session_state.date_from = dates[0] if dates else "2026-01-01"
+    st.session_state.date_to = dates[-1] if dates else "2026-12-31"
+
+with col_from:
+    st.session_state.date_from = st.text_input("开始日期", st.session_state.date_from, key="df_from")
+with col_to:
+    st.session_state.date_to = st.text_input("结束日期", st.session_state.date_to, key="df_to")
+
+all_raw = get_cached_sessions()
+# 按日期范围筛选
+all_sessions = [s for s in all_raw
+                if st.session_state.date_from <= s["date"] <= st.session_state.date_to]
+
 all_anchors = sorted(set(s["anchor"] for s in all_sessions))
 default_anchor = "冯芊祎" if "冯芊祎" in all_anchors else (all_anchors[0] if all_anchors else None)
 
