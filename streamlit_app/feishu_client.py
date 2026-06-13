@@ -66,55 +66,49 @@ class FeishuClient:
 
     def get_sessions(self, anchor_names=None):
         """读取场次数据，聚合为 session 列表"""
-        from datetime import datetime
+        from datetime import datetime, timezone, timedelta
         from collections import defaultdict
 
         records = self.fetch_all_records(TABLE_SESSIONS)
 
-        # 筛选主播
-        filtered = []
+        groups = defaultdict(list)
         for rec in records:
             fds = rec.get("fields", {})
-            anchor = self._text_list(fds.get("主播姓名", []))
-            if anchor_names and not any(n in anchor for n in anchor_names):
-                continue
-            if not anchor:
-                continue
-            clean = {}
-            for k, v in fds.items():
-                clean[k] = self._value(v)
-            clean["_主播"] = anchor[0] if anchor else "?"
-            filtered.append(clean)
-
-        # 按 主播+日期 分组
-        groups = defaultdict(list)
-        for rec in filtered:
-            ts = rec.get("记录时间", 0)
-            if isinstance(ts, (int, float)) and ts > 0:
-                from datetime import timezone, timedelta
-                dt = datetime.fromtimestamp(ts / 1000, tz=timezone(timedelta(hours=8)))
-                date = dt.strftime("%Y-%m-%d")
+            anc_raw = fds.get("主播姓名", [])
+            if isinstance(anc_raw, list) and anc_raw:
+                anc_name = anc_raw[0].get("text", "") if isinstance(anc_raw[0], dict) else str(anc_raw[0])
             else:
                 continue
-            key = (rec.get("_主播", "?"), date)
-            groups[key].append(rec)
+            if not anc_name:
+                continue
+            if anchor_names and not any(n in anc_name for n in anchor_names):
+                continue
+            ts = fds.get("记录时间", 0)
+            if not isinstance(ts, (int, float)) or ts <= 0:
+                continue
+            dt = datetime.fromtimestamp(ts / 1000, tz=timezone(timedelta(hours=8)))
+            date = dt.strftime("%Y-%m-%d")
+            groups[(anc_name, date)].append(rec)
 
         sessions = []
         for (name, date), recs in groups.items():
             shifts = set()
             ops = set()
             hours_l, gpm_l, uv_l, gmv_l = [], [], [], []
-            for r in recs:
-                s = self._text_list(r.get("班次", []))
-                if s: shifts.update(s)
-                op_raw = r.get("跟播运营姓名", "")
+            for rec in recs:
+                fds = rec.get("fields", {})
+                shift_raw = fds.get("班次", [])
+                if isinstance(shift_raw, list):
+                    for x in shift_raw:
+                        s = x.get("text", "") if isinstance(x, dict) else str(x)
+                        if s: shifts.add(s)
+                op_raw = fds.get("跟播运营姓名", "")
                 if isinstance(op_raw, str) and op_raw:
-                    # 拆分拼接的运营名：张宇霆邓安祺 → 张宇霆, 邓安祺
-                    for name in self._split_names(op_raw):
-                        if name: ops.add(name)
-                for f, lst in [("主播直播时长", hours_l), ("单小时GPM(千次观看成交金额)", gpm_l),
-                               ("UV价值(单人价值)", uv_l), ("单小时直播间GMV", gmv_l)]:
-                    v = r.get(f, 0)
+                    for n in self._split_names(op_raw):
+                        if n: ops.add(n)
+                for fname, lst in [("主播直播时长", hours_l), ("单小时GPM(千次观看成交金额)", gpm_l),
+                                   ("UV价值(单人价值)", uv_l), ("单小时直播间GMV", gmv_l)]:
+                    v = fds.get(fname, 0)
                     if isinstance(v, (int, float)) and v > 0:
                         lst.append(v)
 
@@ -126,11 +120,10 @@ class FeishuClient:
                 "gmvTotal": round(sum(gmv_l)),
                 "gpmAvg": round(sum(gpm_l) / len(gpm_l)) if gpm_l else 0,
                 "uvAvg": round(sum(uv_l) / len(uv_l), 2) if uv_l else 0,
-                "returnRate": round(self._num(recs[0].get("产品退货率", 0.3)), 3),
+                "returnRate": round(self._num(recs[0].get("fields", {}).get("产品退货率", 0.3)), 3),
             })
         sessions.sort(key=lambda s: (s["anchor"], s["date"]))
         return sessions
-
     def get_all_anchors(self):
         """获取所有主播列表（直接从原始数据提取，不依赖聚合）"""
         records = self.fetch_all_records(TABLE_SESSIONS)
