@@ -5,3 +5,4 @@ __pycache__/
 
 # Streamlit secrets
 streamlit_app/.streamlit/secrets.toml
+录屏回放/
