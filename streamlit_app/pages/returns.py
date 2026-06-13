@@ -570,11 +570,7 @@ with tab5:
                         key = st.secrets.get("SILICONFLOW_KEY", os.environ.get("SILICONFLOW_KEY", ""))
                         headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
                         # 依次尝试不同模型（DeepSeek-V3 高峰期容易503）
-                        models = [
-                            "Qwen/Qwen3-235B-A22B-Instruct-2507",
-                            "deepseek-ai/DeepSeek-V2.5",
-                            "deepseek-ai/DeepSeek-V3",
-                        ]
+                        models = ["Pro/moonshotai/Kimi-K2.6"]
                         ai_text = None
                         for model in models:
                             resp = req.post(
