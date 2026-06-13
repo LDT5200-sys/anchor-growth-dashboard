@@ -54,12 +54,25 @@ with left:
     💰 GMV ¥{s['gmvTotal']:,}　📊 GPM {s['gpmAvg']:,}　👤 UV {s['uvAvg']}
     """)
 
-    recent = sessions[-5:] if len(sessions) >= 5 else sessions
-    fig = px.line(x=[fmt_date(r["date"]) for r in recent], y=[r["gpmAvg"] for r in recent],
-                  markers=True, title=f"近{len(recent)}场 GPM 趋势")
-    fig.update_traces(line=dict(color="#2E7D32", width=3), marker=dict(size=8, color="#2E7D32"))
+    recent = sessions[-8:] if len(sessions) >= 8 else sessions
+    # 只保留小时数≥3的场次，过滤掉试播/短场
+    valid = [s for s in sessions if s["hours"] >= 2.5]
+    if not valid:
+        valid = sessions  # 如果没有合格的，全显示
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=[fmt_date(r["date"]) for r in valid],
+        y=[r["gpmAvg"] for r in valid],
+        mode="lines+markers",
+        line=dict(color="#2E7D32", width=3),
+        marker=dict(size=10, color="#2E7D32"),
+        hovertemplate="%{x}<br>GPM: %{y:,}<br>GMV: ¥%{customdata:,}<extra></extra>",
+        customdata=[r["gmvTotal"] for r in valid],
+    ))
     fig.update_layout(height=280, margin=dict(l=10, r=10, t=40, b=10),
-                      plot_bgcolor="white", paper_bgcolor="white")
+                      plot_bgcolor="white", paper_bgcolor="white",
+                      yaxis_title="GPM", xaxis_title="",
+                      hovermode="x unified")
     st.plotly_chart(fig, use_container_width=True)
 
 with right:
