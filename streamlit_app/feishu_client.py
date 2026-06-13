@@ -105,8 +105,11 @@ class FeishuClient:
             for r in recs:
                 s = self._text_list(r.get("班次", []))
                 if s: shifts.update(s)
-                op = r.get("跟播运营姓名", "")
-                if isinstance(op, str) and op: ops.add(op)
+                op_raw = r.get("跟播运营姓名", "")
+                if isinstance(op_raw, str) and op_raw:
+                    # 拆分拼接的运营名：张宇霆邓安祺 → 张宇霆, 邓安祺
+                    for name in self._split_names(op_raw):
+                        if name: ops.add(name)
                 for f, lst in [("主播直播时长", hours_l), ("单小时GPM(千次观看成交金额)", gpm_l),
                                ("UV价值(单人价值)", uv_l), ("单小时直播间GMV", gmv_l)]:
                     v = r.get(f, 0)
@@ -194,6 +197,34 @@ class FeishuClient:
         if isinstance(v, (int, float)):
             return float(v)
         return 0.0
+
+    KNOWN_OPS = ["邢世坦", "张佳林", "张宇霆", "邓安祺", "吴家伟", "贾明芳"]
+
+    @classmethod
+    def _split_names(cls, raw):
+        """拆分拼接的运营名：张宇霆邓安祺 → ['张宇霆', '邓安祺']"""
+        # 先按逗号分
+        parts = [p.strip() for p in raw.replace("，", ",").split(",")]
+        result = []
+        for part in parts:
+            if part in cls.KNOWN_OPS:
+                result.append(part)
+            else:
+                # 尝试匹配已知名拆分
+                remaining = part
+                while remaining:
+                    matched = None
+                    for name in sorted(cls.KNOWN_OPS, key=len, reverse=True):
+                        if remaining.startswith(name):
+                            matched = name
+                            break
+                    if matched:
+                        result.append(matched)
+                        remaining = remaining[len(matched):]
+                    else:
+                        result.append(remaining)
+                        break
+        return result
 
 
 def fmt_date(date_str):

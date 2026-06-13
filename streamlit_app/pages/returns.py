@@ -345,8 +345,16 @@ with tab4:
         st.error("🔴 核心卖点遗漏较多，建议回看录播定位问题")
 
 with tab5:
-    st.subheader("🆚 新主播话术覆盖对比")
-    st.caption("上传蝉管家导出的「视频话术」xlsx 文件，自动分析并对比")
+    st.subheader("🆚 话术覆盖对比")
+
+    mode = st.radio("对比模式", ["🔥 新人PK", "🏆 新人 vs 头部", "📈 自己历史对比"], horizontal=True)
+
+    if mode == "🔥 新人PK":
+        st.caption("上传冯芊祎、朱佳琪等人的话术文件 → 看谁覆盖更全")
+    elif mode == "🏆 新人 vs 头部":
+        st.caption("上传冯芊祎 + 一位常驻主播（如范晓晶）的话术 → 找差距")
+    else:
+        st.caption("上传冯芊祎不同日期的话术文件 → 看进步还是退步（先旧后新）")
 
     # 上传区域
     uploaded_files = st.file_uploader(
@@ -457,7 +465,13 @@ with tab5:
         # 显示对比
         if results:
             st.divider()
-            st.subheader("📊 覆盖率对比")
+
+            if mode == "🔥 新人PK":
+                st.subheader("🔥 新主播 PK")
+            elif mode == "🏆 新人 vs 头部":
+                st.subheader("🏆 新人 vs 头部主播")
+            else:
+                st.subheader("📈 自己历史对比")
 
             # 柱状图
             valid = [r for r in results if "error" not in r]
@@ -486,11 +500,24 @@ with tab5:
                 st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
             # 各主播详情
-            for r in results:
+            for i, r in enumerate(results):
                 if "error" in r:
                     st.error(f"❌ {r['anchor']}: {r['error']}")
                 else:
-                    with st.expander(f"{'🥇' if r['pct']>=80 else '🥈' if r['pct']>=60 else '🥉'} {r['anchor']}: {r['pct']}%（{r['covered']}/{r['total']}）"):
+                    if mode == "📈 自己历史对比":
+                        # 历史对比：第一份是旧的，最后一份是新的
+                        if i == 0:
+                            delta = 0
+                            icon = "📌 上次"
+                        else:
+                            prev_pct = results[i-1]["pct"]
+                            delta = r["pct"] - prev_pct
+                            icon = f"{'📈' if delta>0 else '📉' if delta<0 else '➡️'} {'+' if delta>0 else ''}{delta}%"
+                        label = f"{icon} {r['anchor']}: {r['pct']}%"
+                    else:
+                        label = f"{'🥇' if r['pct']>=80 else '🥈' if r['pct']>=60 else '🥉'} {r['anchor']}: {r['pct']}%（{r['covered']}/{r['total']}）"
+
+                    with st.expander(label):
                         missed = [d[1] for d in r["details"] if d[0] == "❌"]
                         if missed:
                             st.markdown("**❌ 遗漏项：**")
