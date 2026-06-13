@@ -1,6 +1,7 @@
 """冯芊祎专属辅导面板：退货率诊断 + 预警 + 实操检查表"""
 
 import streamlit as st
+import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import requests, urllib3
@@ -539,13 +540,8 @@ with tab5:
             st.divider()
             st.subheader("🤖 AI 总结分析")
 
-            api_key = st.text_input("Anthropic API Key", type="password",
-                                    placeholder="sk-ant-...", key="ai_key",
-                                    help="留空则使用默认Key")
-
             if st.button("🔍 AI 分析话术", type="primary", use_container_width=True):
                 with st.spinner("AI 分析中..."):
-                    # 构建分析上下文
                     valid_results = [r for r in results if "error" not in r]
                     context = f"""你是直播带货话术教练。请分析以下新主播的秘纤产品话术覆盖情况，给出具体评价。
 
@@ -564,32 +560,27 @@ with tab5:
                     for r in valid_results:
                         context += f"\n### {r['anchor']}：覆盖率 {r['pct']}%（{r['covered']}/{r['total']}）\n"
                         missed = [d[1] for d in r["details"] if d[0] == "❌"]
-                        hit = [d[1] for d in r["details"] if d[0] == "✅"]
                         if missed:
                             context += f"遗漏：{'、'.join(missed)}\n"
-                        if hit:
-                            context += f"命中：{'、'.join(hit[:5])}...\n"
 
                     context += f"\n对比模式：{mode}\n请输出：1.各主播优缺点 2.谁表现更好及原因 3.各自最需要提升的3个点 4.具体练习建议。用中文回答，简洁直接。"
 
                     try:
                         import requests as req
-                        actual_key = api_key.strip() if api_key.strip() else None
-                        if not actual_key:
-                            actual_key = "sk-ant"  # fallback
-                        resp = req.post("https://api.anthropic.com/v1/messages",
-                            headers={"x-api-key": actual_key, "anthropic-version": "2023-06-01",
+                        resp = req.post(
+                            "https://api.siliconflow.cn/v1/chat/completions",
+                            headers={"Authorization": "Bearer " + (st.secrets.get("SILICONFLOW_KEY", os.environ.get("SILICONFLOW_KEY", ""))),
                                      "Content-Type": "application/json"},
-                            json={"model": "claude-sonnet-4-6", "max_tokens": 800,
+                            json={"model": "deepseek-ai/DeepSeek-V3", "max_tokens": 800,
                                   "messages": [{"role": "user", "content": context}]},
-                            timeout=30)
+                            timeout=60)
                         if resp.status_code == 200:
-                            ai_text = resp.json()["content"][0]["text"]
+                            ai_text = resp.json()["choices"][0]["message"]["content"]
                             st.markdown("### 🤖 AI 分析")
                             st.markdown(ai_text)
                         else:
-                            st.error(f"API 错误 ({resp.status_code}): {resp.text[:200]}")
+                            st.error(f"API 错误 ({resp.status_code}): {resp.text[:300]}")
                     except Exception as e:
-                        st.error(f"AI 调用失败：{e}。请检查 API Key 是否正确。")
+                        st.error(f"AI 调用失败：{e}")
     else:
         st.info("💡 从蝉管家导出「视频话术」xlsx 文件，拖入上方即可自动分析。支持多个文件同时上传对比。")
