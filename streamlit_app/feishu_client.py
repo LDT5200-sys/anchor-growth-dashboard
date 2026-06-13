@@ -91,7 +91,9 @@ class FeishuClient:
         for rec in filtered:
             ts = rec.get("记录时间", 0)
             if isinstance(ts, (int, float)) and ts > 0:
-                date = datetime.fromtimestamp(ts / 1000).strftime("%Y-%m-%d")
+                from datetime import timezone, timedelta
+                dt = datetime.fromtimestamp(ts / 1000, tz=timezone(timedelta(hours=8)))
+                date = dt.strftime("%Y-%m-%d")
             else:
                 continue
             key = (rec.get("_主播", "?"), date)
