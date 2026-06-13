@@ -6,7 +6,9 @@ from feishu_client import get_cached_sessions, fmt_date
 
 st.title("📈 业绩趋势对比")
 
-sessions = get_cached_sessions()
+all_raw = get_cached_sessions()
+# 过滤试播/短场（<2小时），只保留正式场次
+sessions = [s for s in all_raw if s["hours"] >= 2]
 all_anchors = sorted(set(s["anchor"] for s in sessions))
 
 if not all_anchors:
@@ -40,7 +42,8 @@ for i, name in enumerate(selected):
 
     fig.add_trace(go.Scatter(x=dates, y=vals, mode='lines+markers', name=name,
                              line=dict(color=colors[i % len(colors)], width=2.5),
-                             marker=dict(size=8)))
+                             marker=dict(size=8),
+                             hovertemplate=f"{name}<br>%{{x}}: %{{y:,}}<extra></extra>"))
 
 fig.update_layout(height=420, margin=dict(l=10, r=10, t=10, b=10),
                   plot_bgcolor="white", paper_bgcolor="white",
