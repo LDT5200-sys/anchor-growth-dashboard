@@ -580,7 +580,8 @@ with tab5:
                                       "messages": [{"role": "user", "content": context}]},
                                 timeout=120)
                             if resp.status_code == 200:
-                                ai_text = resp.json()["choices"][0]["message"]["content"]
+                                msg = resp.json()["choices"][0]["message"]
+                                ai_text = msg.get("content", "") or msg.get("reasoning_content", "")
                                 break
                             elif resp.status_code == 503:
                                 time.sleep(1)  # 模型忙，换个试试
