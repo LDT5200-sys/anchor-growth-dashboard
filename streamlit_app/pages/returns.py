@@ -640,47 +640,10 @@ with tab6:
     st.subheader("📝 结构化复盘日志")
     st.caption("每场下播后填写，数据同步到飞书")
 
-    REVIEW_BASE = "Jwu7bRyHvagQ4Hsv8ExcPiOOnnd"
+    REVIEW_BASE = "YblIbo266atEhtsWug4cycmrnDb"
     REVIEW_TABLE = None  # 自动创建
 
-    # 自动创建复盘表（首次使用）
-    if "review_table_id" not in st.session_state:
-        try:
-            token = get_token()
-            headers_t = {"Authorization": f"Bearer {token}"}
-            r = requests.get(
-                f"https://open.feishu.cn/open-apis/bitable/v1/apps/{REVIEW_BASE}/tables",
-                headers=headers_t, timeout=15, verify=False)
-            tables = r.json().get("data", {}).get("items", [])
-            for t in tables:
-                if t.get("name") == "主播复盘日志":
-                    st.session_state.review_table_id = t["table_id"]
-                    break
-            if "review_table_id" not in st.session_state:
-                # 创建新表
-                r = requests.post(
-                    f"https://open.feishu.cn/open-apis/bitable/v1/apps/{REVIEW_BASE}/tables",
-                    headers=headers_t,
-                    json={"table": {"name": "主播复盘日志"}}, timeout=15, verify=False)
-                tid = r.json()["data"]["table_id"]
-                # 创建字段
-                fields_def = [
-                    {"field_name": "时间", "type": 5},
-                    {"field_name": "当日复盘总结1-3个表现好的点", "type": 1},
-                    {"field_name": "上场改进点本场已改善的点", "type": 1},
-                    {"field_name": "下场需要改进/新增的1-3个点", "type": 1},
-                    {"field_name": "今日学习点/发觉出单点", "type": 1},
-                    {"field_name": "提交人", "type": 1},
-                ]
-                for fd in fields_def:
-                    requests.post(
-                        f"https://open.feishu.cn/open-apis/bitable/v1/apps/{REVIEW_BASE}/tables/{tid}/fields",
-                        headers=headers_t, json=fd, timeout=15, verify=False)
-                st.session_state.review_table_id = tid
-        except:
-            st.session_state.review_table_id = None
-
-    REVIEW_TABLE = st.session_state.get("review_table_id")
+REVIEW_TABLE = "tblr4TQNbrMqJoDN"
     if not REVIEW_TABLE:
         st.warning("复盘表创建失败，请刷新重试")
         st.stop()
