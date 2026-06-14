@@ -640,8 +640,50 @@ with tab6:
     st.subheader("📝 结构化复盘日志")
     st.caption("每场下播后填写，数据同步到飞书")
 
-    REVIEW_BASE = "To7SbiJ0zaFPswsF32CcwIeAnZd"
-    REVIEW_TABLE = "tbl2xnaaPMyHkj2K"
+    REVIEW_BASE = "Jwu7bRyHvagQ4Hsv8ExcPiOOnnd"
+    REVIEW_TABLE = None  # 自动创建
+
+    # 自动创建复盘表（首次使用）
+    if "review_table_id" not in st.session_state:
+        try:
+            token = get_token()
+            headers_t = {"Authorization": f"Bearer {token}"}
+            r = requests.get(
+                f"https://open.feishu.cn/open-apis/bitable/v1/apps/{REVIEW_BASE}/tables",
+                headers=headers_t, timeout=15, verify=False)
+            tables = r.json().get("data", {}).get("items", [])
+            for t in tables:
+                if t.get("name") == "主播复盘日志":
+                    st.session_state.review_table_id = t["table_id"]
+                    break
+            if "review_table_id" not in st.session_state:
+                # 创建新表
+                r = requests.post(
+                    f"https://open.feishu.cn/open-apis/bitable/v1/apps/{REVIEW_BASE}/tables",
+                    headers=headers_t,
+                    json={"table": {"name": "主播复盘日志"}}, timeout=15, verify=False)
+                tid = r.json()["data"]["table_id"]
+                # 创建字段
+                fields_def = [
+                    {"field_name": "时间", "type": 5},
+                    {"field_name": "当日复盘总结1-3个表现好的点", "type": 1},
+                    {"field_name": "上场改进点本场已改善的点", "type": 1},
+                    {"field_name": "下场需要改进/新增的1-3个点", "type": 1},
+                    {"field_name": "今日学习点/发觉出单点", "type": 1},
+                    {"field_name": "提交人", "type": 1},
+                ]
+                for fd in fields_def:
+                    requests.post(
+                        f"https://open.feishu.cn/open-apis/bitable/v1/apps/{REVIEW_BASE}/tables/{tid}/fields",
+                        headers=headers_t, json=fd, timeout=15, verify=False)
+                st.session_state.review_table_id = tid
+        except:
+            st.session_state.review_table_id = None
+
+    REVIEW_TABLE = st.session_state.get("review_table_id")
+    if not REVIEW_TABLE:
+        st.warning("复盘表创建失败，请刷新重试")
+        st.stop()
 
     # 读取已有日志
     if st.button("📥 加载历史日志", type="secondary"):
@@ -680,8 +722,7 @@ with tab6:
                 dt = datetime.fromtimestamp(ts/1000).strftime("%Y-%m-%d")
             except:
                 dt = str(ts)
-            submitter = f.get("提交人", {})
-            name = submitter.get("name", "?") if isinstance(submitter, dict) else str(submitter)
+            name = f.get("提交人", "?")
             good = f.get("当日复盘总结1-3个表现好的点", "")
             improved = f.get("上场改进点本场已改善的点", "")
             to_improve = f.get("下场需要改进/新增的1-3个点", "")
@@ -706,7 +747,7 @@ with tab6:
             rev_date = st.date_input("场次日期", value=datetime.now())
             rev_name = st.text_input("提交人", value="冯芊祎")
         with col_b:
-            st.caption("参考贾明芳的模板格式填写")
+            st.caption("每场下播后花2分钟填写")
         rev_good = st.text_area("✅ 本场1-3个表现好的点", height=80)
         rev_improved = st.text_area("📈 上场改进点本场已改善的", height=80,
                                     placeholder="比上场进步的地方...")
@@ -730,7 +771,7 @@ with tab6:
                             "上场改进点本场已改善的点": rev_improved,
                             "下场需要改进/新增的1-3个点": rev_to_improve,
                             "今日学习点/发觉出单点": rev_learned,
-                            "提交人": {"id": "ou_fb5b9e8c8adf17fdbf6cbf89f5617a67"},
+                            "提交人": rev_name,
                         }
                     }
                     resp = requests.post(
