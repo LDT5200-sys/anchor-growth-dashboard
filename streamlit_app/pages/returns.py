@@ -640,8 +640,8 @@ with tab6:
     st.subheader("📝 结构化复盘日志")
     st.caption("每场下播后填写，数据同步到飞书")
 
-    REVIEW_BASE = "YblIbo266atEhtsWug4cycmrnDb"
-    REVIEW_TABLE = "tblr4TQNbrMqJoDN"
+    REVIEW_BASE = "Jwu7bRyHvagQ4Hsv8ExcPiOOnnd"
+    REVIEW_TABLE = "tblRgBkMyzQ6e14D"
     # 读取已有日志
     if st.button("📥 加载历史日志", type="secondary"):
         try:
@@ -680,10 +680,10 @@ with tab6:
             except:
                 dt = str(ts)
             name = f.get("提交人", "?")
-            good = f.get("当日复盘总结1-3个表现好的点", "")
-            improved = f.get("上场改进点本场已改善的点", "")
-            to_improve = f.get("下场需要改进/新增的1-3个点", "")
-            learned = f.get("今日学习点/发觉出单点", "")
+            good = f.get("当日表现好的点", "")
+            improved = f.get("上场已改善的点", "")
+            to_improve = f.get("下场需改进的点", "")
+            learned = f.get("学习点/发觉", "")
 
             with st.expander(f"📅 {dt} · {name}"):
                 if good:
@@ -724,11 +724,12 @@ with tab6:
                     body = {
                         "fields": {
                             "时间": ts_ms,
-                            "当日复盘总结1-3个表现好的点": rev_good,
-                            "上场改进点本场已改善的点": rev_improved,
-                            "下场需要改进/新增的1-3个点": rev_to_improve,
-                            "今日学习点/发觉出单点": rev_learned,
+                            "当日表现好的点": rev_good,
+                            "上场已改善的点": rev_improved,
+                            "下场需改进的点": rev_to_improve,
+                            "学习点/发觉": rev_learned,
                             "提交人": rev_name,
+                        "主播姓名": rev_name,
                         }
                     }
                     resp = requests.post(
