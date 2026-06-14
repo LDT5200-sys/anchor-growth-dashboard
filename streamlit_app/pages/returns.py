@@ -641,13 +641,7 @@ with tab6:
     st.caption("每场下播后填写，数据同步到飞书")
 
     REVIEW_BASE = "YblIbo266atEhtsWug4cycmrnDb"
-    REVIEW_TABLE = None  # 自动创建
-
-REVIEW_TABLE = "tblr4TQNbrMqJoDN"
-    if not REVIEW_TABLE:
-        st.warning("复盘表创建失败，请刷新重试")
-        st.stop()
-
+    REVIEW_TABLE = "tblr4TQNbrMqJoDN"
     # 读取已有日志
     if st.button("📥 加载历史日志", type="secondary"):
         try:
